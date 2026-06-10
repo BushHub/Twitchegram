@@ -16,8 +16,44 @@ const DEFAULT_CONFIG = {
     useLinkSpoiler: true,
     bubbleColor: '#182533',
     textColor: '#f5f5f5',
-    theme: 'light'
+    theme: 'light',
+    // Новые параметры v7.5.0
+    fontFamily: 'system',
+    pinBgColor: '#ffffff',
+    pinTextColor: '#1c1c1c',
+    pinOpacity: 100,
+    pinFontSize: 13,
+    outgoingEnabled: false,
+    outgoingSync: true,
+    outgoingBubbleColor: '#2b5278',
+    outgoingTextColor: '#f5f5f5',
+    incomingMargin: 0,
+    outgoingMargin: 0
 };
+
+const FONT_MAP = {
+    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    inter: '"Inter", sans-serif',
+    roboto: '"Roboto", sans-serif',
+    montserrat: '"Montserrat", sans-serif',
+    nunito: '"Nunito", sans-serif',
+    play: '"Play", sans-serif'
+};
+
+const OUTGOING_DEFAULTS = {
+    '#182533': { bubble: '#2b5278', text: '#f5f5f5' }, // Telegram Dark
+    '#eef2f6': { bubble: '#effdde', text: '#1c1c1c' }, // Telegram Light
+    '#2b5278': { bubble: '#1c3e5d', text: '#f5f5f5' }, // Telegram Classic Green
+    '#2d2522': { bubble: '#443632', text: '#f5ebd6' }, // Cozy Peach
+    '#e2f3eb': { bubble: '#cdeee1', text: '#1c2d24' }  // Retro Mint
+};
+
+function isLightColor(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return false;
+    const luma = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+    return luma > 180;
+}
 
 let config = { ...DEFAULT_CONFIG };
 
@@ -142,6 +178,20 @@ window.applyPreset = function(bubbleColor, textColor) {
     syncColorSwatch('adm-text-color', 'swatch-text');
 };
 
+window.toggleOutgoingSection = function() {
+    const enabled = document.getElementById('adm-outgoing-enabled').checked;
+    document.getElementById('outgoing-sub-options').style.display = enabled ? 'block' : 'none';
+    const outgoingMarginGroup = document.getElementById('group-outgoing-margin');
+    if (outgoingMarginGroup) {
+        outgoingMarginGroup.style.display = enabled ? 'block' : 'none';
+    }
+};
+
+window.toggleOutgoingColors = function() {
+    const sync = document.getElementById('adm-outgoing-sync').checked;
+    document.getElementById('outgoing-color-row').style.display = sync ? 'none' : 'flex';
+};
+
 function setupAdminFields() {
     document.getElementById('adm-channel').value = config.channel;
     document.getElementById('adm-font-size').value = config.fontSize;
@@ -169,17 +219,50 @@ function setupAdminFields() {
     // Phase 5 fields
     setToggle('adm-theme', config.theme || 'light');
 
+    // v7.5.0 новые поля закрепа
+    document.getElementById('adm-pin-bg-color').value = config.pinBgColor || '#ffffff';
+    document.getElementById('adm-pin-text-color').value = config.pinTextColor || '#1c1c1c';
+    document.getElementById('adm-pin-opacity').value = config.pinOpacity || 100;
+    document.getElementById('adm-pin-font-size').value = config.pinFontSize || 13;
+    syncColorSwatch('adm-pin-bg-color', 'swatch-pin-bg');
+    syncColorSwatch('adm-pin-text-color', 'swatch-pin-text');
+
+    // v7.5.0 новые поля шрифтов
+    setToggle('adm-font-family', config.fontFamily || 'system');
+
+    // v7.5.0 новые поля сообщений стримера
+    document.getElementById('adm-outgoing-enabled').checked = config.outgoingEnabled || false;
+    document.getElementById('adm-outgoing-sync').checked = config.outgoingSync !== false;
+    document.getElementById('adm-outgoing-bubble-color').value = config.outgoingBubbleColor || '#2b5278';
+    document.getElementById('adm-outgoing-text-color').value = config.outgoingTextColor || '#f5f5f5';
+    syncColorSwatch('adm-outgoing-bubble-color', 'swatch-outgoing-bubble');
+    syncColorSwatch('adm-outgoing-text-color', 'swatch-outgoing-text');
+
+    // v7.5.0 новые поля отступов входящих/исходящих
+    document.getElementById('adm-incoming-margin').value = config.incomingMargin || 0;
+    document.getElementById('adm-outgoing-margin').value = config.outgoingMargin || 0;
+
     document.getElementById('adm-max-width').oninput = function() { document.getElementById('val-max-width').innerText = this.value + 'px'; }
     document.getElementById('adm-padding').oninput = function() { document.getElementById('val-padding').innerText = this.value + 'px'; }
     document.getElementById('adm-opacity').oninput = function() { document.getElementById('val-opacity').innerText = this.value + '%'; }
     document.getElementById('adm-lifetime').oninput = function() { 
         document.getElementById('val-lifetime').innerText = this.value === '0' ? 'Отключено' : this.value + ' сек'; 
     }
+    document.getElementById('adm-pin-opacity').oninput = function() { document.getElementById('val-pin-opacity').innerText = this.value + '%'; }
+    document.getElementById('adm-incoming-margin').oninput = function() { document.getElementById('val-incoming-margin').innerText = this.value + 'px'; }
+    document.getElementById('adm-outgoing-margin').oninput = function() { document.getElementById('val-outgoing-margin').innerText = this.value + 'px'; }
     
     document.getElementById('adm-max-width').oninput();
     document.getElementById('adm-padding').oninput();
     document.getElementById('adm-opacity').oninput();
     document.getElementById('adm-lifetime').oninput();
+    document.getElementById('adm-pin-opacity').oninput();
+    document.getElementById('adm-incoming-margin').oninput();
+    document.getElementById('adm-outgoing-margin').oninput();
+
+    // Скрытие/показ опций исходящих сообщений стримера
+    toggleOutgoingSection();
+    toggleOutgoingColors();
     
     document.documentElement.setAttribute('data-theme', config.theme || 'light');
 }
@@ -209,6 +292,25 @@ function adminSave() {
     // Phase 5 fields
     config.theme = getToggleValue('adm-theme') || 'light';
 
+    // v7.5.0 новые поля закрепа
+    config.pinBgColor = document.getElementById('adm-pin-bg-color').value;
+    config.pinTextColor = document.getElementById('adm-pin-text-color').value;
+    config.pinOpacity = parseInt(document.getElementById('adm-pin-opacity').value) || 100;
+    config.pinFontSize = parseInt(document.getElementById('adm-pin-font-size').value) || 13;
+
+    // v7.5.0 новые поля шрифтов
+    config.fontFamily = getToggleValue('adm-font-family') || 'system';
+
+    // v7.5.0 новые поля исходящих стримера
+    config.outgoingEnabled = document.getElementById('adm-outgoing-enabled').checked;
+    config.outgoingSync = document.getElementById('adm-outgoing-sync').checked;
+    config.outgoingBubbleColor = document.getElementById('adm-outgoing-bubble-color').value;
+    config.outgoingTextColor = document.getElementById('adm-outgoing-text-color').value;
+
+    // v7.5.0 новые поля отступов
+    config.incomingMargin = parseInt(document.getElementById('adm-incoming-margin').value) || 0;
+    config.outgoingMargin = parseInt(document.getElementById('adm-outgoing-margin').value) || 0;
+
     localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
     applyConfigStyles();
     updatePinDisplay();
@@ -222,6 +324,8 @@ async function resetSection(section) {
     if (section === 'geometry') {
         config.maxWidth = DEFAULT_CONFIG.maxWidth;
         config.padding = DEFAULT_CONFIG.padding;
+        config.incomingMargin = DEFAULT_CONFIG.incomingMargin;
+        config.outgoingMargin = DEFAULT_CONFIG.outgoingMargin;
     } else if (section === 'visual') {
         config.fontSize = DEFAULT_CONFIG.fontSize;
         config.timeSize = DEFAULT_CONFIG.timeSize;
@@ -231,10 +335,22 @@ async function resetSection(section) {
         config.textColor = DEFAULT_CONFIG.textColor;
         config.showAvatars = DEFAULT_CONFIG.showAvatars;
         config.theme = DEFAULT_CONFIG.theme;
+        config.fontFamily = DEFAULT_CONFIG.fontFamily;
     } else if (section === 'roles') {
         config.txtStreamer = DEFAULT_CONFIG.txtStreamer;
         config.txtMod = DEFAULT_CONFIG.txtMod;
         config.txtVip = DEFAULT_CONFIG.txtVip;
+    } else if (section === 'pin') {
+        config.pinType = DEFAULT_CONFIG.pinType;
+        config.pinBgColor = DEFAULT_CONFIG.pinBgColor;
+        config.pinTextColor = DEFAULT_CONFIG.pinTextColor;
+        config.pinOpacity = DEFAULT_CONFIG.pinOpacity;
+        config.pinFontSize = DEFAULT_CONFIG.pinFontSize;
+    } else if (section === 'streamer-msg') {
+        config.outgoingEnabled = DEFAULT_CONFIG.outgoingEnabled;
+        config.outgoingSync = DEFAULT_CONFIG.outgoingSync;
+        config.outgoingBubbleColor = DEFAULT_CONFIG.outgoingBubbleColor;
+        config.outgoingTextColor = DEFAULT_CONFIG.outgoingTextColor;
     }
     
     setupAdminFields();
@@ -272,6 +388,48 @@ function applyConfigStyles() {
     const opacityValue = config.opacity / 100;
     document.documentElement.style.setProperty('--bubble-color', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacityValue})`);
     document.documentElement.style.setProperty('--text-color', config.textColor || '#f5f5f5');
+
+    // Применение шрифта
+    const fontValue = FONT_MAP[config.fontFamily] || FONT_MAP.system;
+    document.documentElement.style.setProperty('--chat-font-family', fontValue);
+
+    // Применение стилей закрепа
+    const pinBgRgb = hexToRgb(config.pinBgColor || '#ffffff') || { r: 255, g: 255, b: 255 };
+    const pinTextRgb = hexToRgb(config.pinTextColor || '#1c1c1c') || { r: 28, g: 28, b: 28 };
+    const pinOpacityValue = (config.pinOpacity || 100) / 100;
+    document.documentElement.style.setProperty('--pin-bg-color', `rgba(${pinBgRgb.r}, ${pinBgRgb.g}, ${pinBgRgb.b}, ${pinOpacityValue})`);
+    document.documentElement.style.setProperty('--pin-text-color', config.pinTextColor || '#1c1c1c');
+    document.documentElement.style.setProperty('--pin-font-size', (config.pinFontSize || 13) + 'px');
+    document.documentElement.style.setProperty('--pin-border-color', `rgba(${pinTextRgb.r}, ${pinTextRgb.g}, ${pinTextRgb.b}, 0.12)`);
+
+    // Применение стилей исходящих сообщений
+    let outBg = config.outgoingBubbleColor || '#2b5278';
+    let outText = config.outgoingTextColor || '#f5f5f5';
+    if (config.outgoingSync) {
+        const matched = OUTGOING_DEFAULTS[config.bubbleColor];
+        if (matched) {
+            outBg = matched.bubble;
+            outText = matched.text;
+        } else {
+            // Если нет в пресетах, рассчитываем исходя из яркости входящих
+            if (isLightColor(config.bubbleColor || '#182533')) {
+                outBg = '#effdde'; // Светло-зеленый (Telegram Light outgoing)
+                outText = '#1c1c1c';
+            } else {
+                outBg = '#2b5278'; // Темно-синий (Telegram Dark outgoing)
+                outText = '#f5f5f5';
+            }
+        }
+    }
+    const outBgRgb = hexToRgb(outBg) || { r: 43, g: 82, b: 120 };
+    const outTextRgb = hexToRgb(outText) || { r: 245, g: 245, b: 245 };
+    document.documentElement.style.setProperty('--outgoing-bubble-color', `rgba(${outBgRgb.r}, ${outBgRgb.g}, ${outBgRgb.b}, ${opacityValue})`);
+    document.documentElement.style.setProperty('--outgoing-text-color', outText);
+    document.documentElement.style.setProperty('--outgoing-time-color', `rgba(${outTextRgb.r}, ${outTextRgb.g}, ${outTextRgb.b}, 0.6)`);
+
+    // Применение отступов
+    document.documentElement.style.setProperty('--incoming-margin', (config.incomingMargin || 0) + 'px');
+    document.documentElement.style.setProperty('--outgoing-margin', (config.outgoingMargin || 0) + 'px');
 }
 
 function updatePinDisplay() {
@@ -438,7 +596,7 @@ client.on('message', async (channel, tags, message, self) => {
     const firstLetter = username.charAt(0);
 
     // КОМАНДЫ УПРАВЛЕНИЯ ЗАКРЕПОМ
-    const isBroadcaster = tags.username === channel.replace('#', '').toLowerCase();
+    const isBroadcaster = tags.username === channel.replace('#', '').toLowerCase() || !!(tags.badges && tags.badges.broadcaster);
     const isMod = tags.mod || isBroadcaster || (tags.badges && (tags.badges.broadcaster || tags.badges.moderator));
 
     if (isMod) {
@@ -480,23 +638,39 @@ client.on('message', async (channel, tags, message, self) => {
         `;
     }
 
+    const isOutgoing = config.outgoingEnabled && isBroadcaster;
+
     const row = document.createElement('div');
     row.classList.add('message-row');
+    if (isOutgoing) {
+        row.classList.add('outgoing');
+    }
 
     const parsedMessage = parseMessageContent(message, tags.emotes);
 
-    row.innerHTML = `
-        <div class="tg-avatar bg-color-${colorIndex}">${firstLetter}</div>
-        <div class="tg-bubble">
-            <div class="bubble-header">
-                <span class="user-name txt-color-${colorIndex}" style="background: none;">${username}</span>
-                ${roleBadgeHtml}
+    if (isOutgoing) {
+        row.innerHTML = `
+            <div class="tg-avatar bg-color-${colorIndex}" style="display: none;">${firstLetter}</div>
+            <div class="tg-bubble">
+                ${replyBlockHtml}
+                <span class="user-text">${parsedMessage}</span>
+                <span class="msg-time">${timeStr}</span>
             </div>
-            ${replyBlockHtml}
-            <span class="user-text">${parsedMessage}</span>
-            <span class="msg-time">${timeStr}</span>
-        </div>
-    `;
+        `;
+    } else {
+        row.innerHTML = `
+            <div class="tg-avatar bg-color-${colorIndex}">${firstLetter}</div>
+            <div class="tg-bubble">
+                <div class="bubble-header">
+                    <span class="user-name txt-color-${colorIndex}" style="background: none;">${username}</span>
+                    ${roleBadgeHtml}
+                </div>
+                ${replyBlockHtml}
+                <span class="user-text">${parsedMessage}</span>
+                <span class="msg-time">${timeStr}</span>
+            </div>
+        `;
+    }
 
     chatContainer.appendChild(row);
 
