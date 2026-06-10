@@ -4,204 +4,7 @@
     <meta charset="UTF-8">
     <title>Twitchegram chat</title>
     <script src="https://github.com/tmijs/tmi.js/releases/download/v1.5.0/tmi.min.js"></script>
-    <style>
-        /* CSS-переменные, управляемые из панели настроек */
-        :root {
-            --chat-font-size: 14px;
-            --time-font-size: 10px;
-            --bubble-max-width: 400px;
-            --bubble-padding: 6px 12px;
-            --bubble-opacity: 1.0;
-            --avatar-display: flex;
-        }
-
-        body {
-            background: transparent;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        #chat-view {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            height: 100vh;
-            width: 100%;
-            box-sizing: border-box;
-            position: relative;
-            padding: 15px;
-        }
-
-        /* КНОПКА-ШЕСТЕРЕНКА (СКРЫТАЯ НА СТРИМЕ) */
-        #gear-toggle-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            z-index: 999;
-            cursor: pointer;
-            opacity: 0; /* Полностью невидима на стриме */
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            width: 24px;
-            height: 24px;
-            color: #5288c1;
-        }
-        /* Проявляется только при наведении мыши в окне Взаимодействия */
-        #gear-toggle-btn:hover {
-            opacity: 1;
-            transform: rotate(45deg);
-        }
-
-        /* ПЛАШКА ЗАКРЕПЛЕННОГО СООБЩЕНИЯ */
-        #pin-banner {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: #17212b;
-            border-bottom: 1px solid #242f3d;
-            padding: 10px 20px;
-            z-index: 900;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transform: translateY(-100%);
-            transition: transform 0.25s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.2s ease;
-            opacity: 0;
-        }
-        #pin-banner.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .pin-tg-style { border-left: 3px solid #5288c1; padding-left: 10px; }
-        .pin-title { font-size: 11px; font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
-        .pin-text { color: #f5f5f5; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* КОНТЕЙНЕР ДЛЯ ЛЕНТЫ ЧАТА */
-        #chat-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            width: 100%;
-        }
-
-        .message-row {
-            display: flex;
-            align-items: flex-end;
-            margin-bottom: 10px;
-            animation: tg-appear 0.25s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        @keyframes tg-appear { to { opacity: 1; transform: translateY(0); } }
-
-        .tg-avatar {
-            display: var(--avatar-display);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 15px;
-            margin-right: 8px;
-            flex-shrink: 0;
-            text-transform: uppercase;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        .tg-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; animation: fadeIn 0.2s ease-in forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .tg-bubble {
-            background-color: rgba(24, 37, 51, var(--bubble-opacity)); 
-            border-radius: 14px 14px 14px 3px; 
-            padding: var(--bubble-padding);
-            max-width: var(--bubble-max-width);
-            position: relative;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            word-break: break-word;
-        }
-
-        .bubble-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
-        .user-name { font-weight: 600; font-size: calc(var(--chat-font-size) - 0.5px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .tg-role-badge { font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 9px; text-transform: uppercase; white-space: nowrap; user-select: none; }
-        .role-broadcaster { background-color: rgba(225, 112, 118, 0.15); color: #e17076; border: 1px solid rgba(225, 112, 118, 0.3); }
-        .role-moderator { background-color: rgba(123, 200, 98, 0.15); color: #7bc862; border: 1px solid rgba(123, 200, 98, 0.3); }
-        .role-vip { background-color: rgba(166, 149, 231, 0.15); color: #a695e7; border: 1px solid rgba(166, 149, 231, 0.3); }
-
-        /* ОТВЕТЫ (REPLY) В СТИЛЕ ТЕЛЕГРАМ */
-        .tg-reply-wrapper {
-            background: rgba(255, 255, 255, 0.04);
-            border-left: 2px solid #5288c1;
-            padding: 2px 0 2px 8px;
-            margin-bottom: 5px;
-            border-radius: 2px;
-            font-size: 12px;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
-        }
-        .tg-reply-author { font-weight: 600; font-size: 11.5px; margin-bottom: 2px; display: block; }
-        .tg-reply-body { color: #b1c3d5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
-
-        .user-text { color: #f5f5f5; font-size: var(--chat-font-size); line-height: 1.4; }
-        .chat-emote { height: 28px; vertical-align: middle; margin: -2px 1px 0 1px; display: inline-block; }
-        .msg-time { font-size: var(--time-font-size); color: #6c7883; float: right; margin-left: 10px; margin-top: 6px; position: relative; bottom: -2px; user-select: none; }
-
-        /* ПАЛИТРА ЦВЕТОВ TELEGRAM (20 ОТТЕНКОВ) */
-        .txt-color-0 { color: #e17076; } .bg-color-0 { background-color: #e17076; } .bd-color-0 { border-left-color: #e17076; }
-        .txt-color-1 { color: #faa774; } .bg-color-1 { background-color: #faa774; } .bd-color-1 { border-left-color: #faa774; }
-        .txt-color-2 { color: #a695e7; } .bg-color-2 { background-color: #a695e7; } .bd-color-2 { border-left-color: #a695e7; }
-        .txt-color-3 { color: #7bc862; } .bg-color-3 { background-color: #7bc862; } .bd-color-3 { border-left-color: #7bc862; }
-        .txt-color-4 { color: #6ec9cb; } .bg-color-4 { background-color: #6ec9cb; } .bd-color-4 { border-left-color: #6ec9cb; }
-        .txt-color-5 { color: #539ad2; } .bg-color-5 { background-color: #539ad2; } .bd-color-5 { border-left-color: #539ad2; }
-        .txt-color-6 { color: #ee7aae; } .bg-color-6 { background-color: #ee7aae; } .bd-color-6 { border-left-color: #ee7aae; }
-        .txt-color-7 { color: #4ffb7e; } .bg-color-7 { background-color: #4ffb7e; } .bd-color-7 { border-left-color: #4ffb7e; }
-        .txt-color-8 { color: #e5ca3c; } .bg-color-8 { background-color: #e5ca3c; } .bd-color-8 { border-left-color: #e5ca3c; }
-        .txt-color-9 { color: #3ca3e5; } .bg-color-9 { background-color: #3ca3e5; } .bd-color-9 { border-left-color: #3ca3e5; }
-        .txt-color-10 { color: #b93ce5; } .bg-color-10 { background-color: #b93ce5; } .bd-color-10 { border-left-color: #b93ce5; }
-        .txt-color-11 { color: #e53c7c; } .bg-color-11 { background-color: #e53c7c; } .bd-color-11 { border-left-color: #e53c7c; }
-        .txt-color-12 { color: #3ce5ca; } .bg-color-12 { background-color: #3ce5ca; } .bd-color-12 { border-left-color: #3ce5ca; }
-        .txt-color-13 { color: #e5783c; } .bg-color-13 { background-color: #e5783c; } .bd-color-13 { border-left-color: #e5783c; }
-        .txt-color-14 { color: #a3e53c; } .bg-color-14 { background-color: #a3e53c; } .bd-color-14 { border-left-color: #a3e53c; }
-        .txt-color-15 { color: #3ce55a; } .bg-color-15 { background-color: #3ce55a; } .bd-color-15 { border-left-color: #3ce55a; }
-        .txt-color-16 { color: #8080ff; } .bg-color-16 { background-color: #8080ff; } .bd-color-16 { border-left-color: #8080ff; }
-        .txt-color-17 { color: #ff80df; } .bg-color-17 { background-color: #ff80df; } .bd-color-17 { border-left-color: #ff80df; }
-        .txt-color-18 { color: #ffc080; } .bg-color-18 { background-color: #ffc080; } .bd-color-18 { border-left-color: #ffc080; }
-        .txt-color-19 { color: #80ffff; } .bg-color-19 { background-color: #80ffff; } .bd-color-19 { border-left-color: #80ffff; }
-
-        .tg-avatar[class*="tg-color-"] { color: white !important; }
-
-        /* ОВЕРЛЕЙ АДМИН-ПАНЕЛИ (ОТКРЫВАЕТСЯ НА ВЕСЬ ЭКРАН ПОВЕРХ ЧАТА) */
-        #config-view {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #17212b; color: white; padding: 30px; box-sizing: border-box; overflow-y: auto; z-index: 9999;
-        }
-        .admin-panel { max-width: 600px; margin: 0 auto; background: #24303f; padding: 25px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #2f3e50; position: relative; }
-        .admin-panel h2 { margin-top: 0; margin-bottom: 4px; color: #5288c1; }
-        
-        /* КНОПКА ЗАКРЫТЬ */
-        .admin-close-btn { position: absolute; top: 20px; right: 20px; cursor: pointer; color: #7f91a4; font-size: 14px; font-weight: bold; background: #1c2735; padding: 6px 12px; border-radius: 6px; border: 1px solid #2f3e50; }
-        .admin-close-btn:hover { color: white; background: #2f3e50; }
-
-        .version-tag { display: block; font-size: 11px; color: #7f91a4; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        .admin-section { margin-bottom: 20px; background: #1c2735; padding: 15px; border-radius: 8px; }
-        .admin-section h4 { margin: 0 0 12px 0; color: #7f91a4; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; color: #b1c3d5; margin-bottom: 6px; }
-        .form-group input[type="text"], .form-group input[type="number"], .form-group select {
-            width: 100%; background: #24303f; border: 1px solid #3b4e66; border-radius: 6px; color: white; padding: 8px 12px; box-sizing: border-box; font-size: 14px;
-        }
-        .form-group input[type="range"] { width: 100%; margin-top: 5px; }
-        .form-inline { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-top: 10px; }
-        .form-row { display: flex; gap: 15px; } .form-row .form-group { flex: 1; }
-        #main-save-btn { width: 100%; background: #5288c1; border: none; color: white; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
-        #main-save-btn:hover { background: #6298d1; }
-        .hint { font-size: 11px; color: #6c7883; margin-top: 4px; display: block; }
-    </style>
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -218,13 +21,21 @@
         <div class="admin-panel">
             <div class="admin-close-btn" onclick="closeAdminPanel()">Закрыть ✕</div>
             <h2>Настройки Twitchegram чата</h2>
-            <span class="version-tag">Версия v7.3 Gear Edition</span>
+            <span class="version-tag">Версия v7.4 Gear Edition</span>
             
             <div class="admin-section">
                 <h4>Основные настройки</h4>
                 <div class="form-group">
                     <label for="adm-channel">Имя вашего Twitch-канала:</label>
                     <input type="text" id="adm-channel" placeholder="например: kisyalev">
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-proxy">
+                    <label for="adm-proxy">Обход блокировки 7TV (Прокси РФ)</label>
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-spoiler">
+                    <label for="adm-spoiler">Скрывать ссылки под спойлер</label>
                 </div>
             </div>
 
@@ -241,7 +52,10 @@
             </div>
 
             <div class="admin-section">
-                <h4>Геометрия и Размеры бабла</h4>
+                <div class="section-header-row">
+                    <h4>Геометрия и Размеры бабла</h4>
+                    <span class="section-reset-link" onclick="resetSection('geometry')">Сбросить раздел</span>
+                </div>
                 <div class="form-group">
                     <label for="adm-max-width">Максимальная ширина сообщения (px):</label>
                     <input type="range" id="adm-max-width" min="200" max="600" step="10">
@@ -255,7 +69,10 @@
             </div>
 
             <div class="admin-section">
-                <h4>Шрифты и Визуал</h4>
+                <div class="section-header-row">
+                    <h4>Шрифты и Визуал</h4>
+                    <span class="section-reset-link" onclick="resetSection('visual')">Сбросить раздел</span>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="adm-font-size">Размер текста (px):</label>
@@ -271,6 +88,21 @@
                     <input type="range" id="adm-opacity" min="10" max="100">
                     <span class="hint" id="val-opacity">100%</span>
                 </div>
+                <div class="form-group">
+                    <label for="adm-lifetime">Время жизни сообщения:</label>
+                    <input type="range" id="adm-lifetime" min="0" max="120" step="5">
+                    <span class="hint" id="val-lifetime">Отключено</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adm-bubble-color">Цвет фона бабла:</label>
+                        <input type="color" id="adm-bubble-color">
+                    </div>
+                    <div class="form-group">
+                        <label for="adm-text-color">Цвет текста сообщений:</label>
+                        <input type="color" id="adm-text-color">
+                    </div>
+                </div>
                 <div class="form-inline">
                     <input type="checkbox" id="adm-avatars">
                     <label for="adm-avatars">Отображать аватарки пользователей</label>
@@ -278,7 +110,10 @@
             </div>
 
             <div class="admin-section">
-                <h4>Кастомизация текста ролей/тегов</h4>
+                <div class="section-header-row">
+                    <h4>Кастомизация текста ролей/тегов</h4>
+                    <span class="section-reset-link" onclick="resetSection('roles')">Сбросить раздел</span>
+                </div>
                 <div class="form-group">
                     <label for="adm-role-broadcaster">Текст для стримера:</label>
                     <input type="text" id="adm-role-broadcaster">
@@ -293,309 +128,13 @@
                 </div>
             </div>
 
-            <button id="main-save-btn" onclick="adminSave()">Сохранить изменения</button>
+            <div class="admin-buttons-row">
+                <button id="main-reset-btn" type="button" onclick="resetAllConfig()">Сбросить всё</button>
+                <button id="main-save-btn" onclick="adminSave()">Сохранить изменения</button>
+            </div>
         </div>
     </div>
 
-    <script>
-        // Инициализация конфигурации
-        let config = {
-            channel: 'kisyalev',
-            fontSize: 14,
-            timeSize: 10,
-            maxWidth: 400,
-            padding: 6,
-            opacity: 100,
-            showAvatars: true,
-            txtStreamer: 'Стример',
-            txtMod: 'Модератор',
-            txtVip: 'VIP',
-            pinType: 'tg',
-            pinned: null
-        };
-
-        let customEmoteMap = {};
-        let avatarCache = {};
-
-        if (localStorage.getItem('tg_twitch_config_v7')) {
-            try { config = JSON.parse(localStorage.getItem('tg_twitch_config_v7')); } catch (e) {}
-        }
-
-        // Синхронизация между вкладками гитхаба (если открыто удаленно)
-        window.addEventListener('storage', (e) => {
-            if (e.key === 'tg_twitch_config_v7') {
-                const oldChannel = config.channel;
-                config = JSON.parse(e.newValue);
-                applyConfigStyles();
-                updatePinDisplay();
-                if (oldChannel !== config.channel) { window.location.reload(); }
-            }
-        });
-
-        // ПЕРЕКЛЮЧАТЕЛИ ОВЕРЛЕЯ (ШЕСТЕРЕНКИ)
-        function openAdminPanel() {
-            setupAdminFields();
-            document.getElementById('config-view').style.display = 'block';
-        }
-
-        function closeAdminPanel() {
-            document.getElementById('config-view').style.display = 'none';
-        }
-
-        function setupAdminFields() {
-            document.getElementById('adm-channel').value = config.channel;
-            document.getElementById('adm-font-size').value = config.fontSize;
-            document.getElementById('adm-time-size').value = config.timeSize;
-            document.getElementById('adm-max-width').value = config.maxWidth;
-            document.getElementById('adm-padding').value = config.padding;
-            document.getElementById('adm-opacity').value = config.opacity;
-            document.getElementById('adm-avatars').checked = config.showAvatars;
-            document.getElementById('adm-role-broadcaster').value = config.txtStreamer;
-            document.getElementById('adm-role-moderator').value = config.txtMod;
-            document.getElementById('adm-role-vip').value = config.txtVip;
-            document.getElementById('adm-pin-type').value = config.pinType;
-
-            document.getElementById('adm-max-width').oninput = function() { document.getElementById('val-max-width').innerText = this.value + 'px'; }
-            document.getElementById('adm-padding').oninput = function() { document.getElementById('val-padding').innerText = this.value + 'px'; }
-            document.getElementById('adm-opacity').oninput = function() { document.getElementById('val-opacity').innerText = this.value + '%'; }
-            
-            document.getElementById('adm-max-width').oninput();
-            document.getElementById('adm-padding').oninput();
-            document.getElementById('adm-opacity').oninput();
-        }
-
-        function adminSave() {
-            config.channel = document.getElementById('adm-channel').value.trim().toLowerCase() || 'kisyalev';
-            config.fontSize = parseInt(document.getElementById('adm-font-size').value) || 14;
-            config.timeSize = parseInt(document.getElementById('adm-time-size').value) || 10;
-            config.maxWidth = parseInt(document.getElementById('adm-max-width').value) || 400;
-            config.padding = parseInt(document.getElementById('adm-padding').value) || 6;
-            config.opacity = parseInt(document.getElementById('adm-opacity').value) || 100;
-            config.showAvatars = document.getElementById('adm-avatars').checked;
-            config.txtStreamer = document.getElementById('adm-role-broadcaster').value.trim() || 'Стример';
-            config.txtMod = document.getElementById('adm-role-moderator').value.trim() || 'Модератор';
-            config.txtVip = document.getElementById('adm-role-vip').value.trim() || 'VIP';
-            config.pinType = document.getElementById('adm-pin-type').value;
-
-            localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
-            applyConfigStyles();
-            updatePinDisplay();
-            closeAdminPanel(); // Закрываем оверлей после сохранения
-        }
-
-        function applyConfigStyles() {
-            document.documentElement.style.setProperty('--chat-font-size', config.fontSize + 'px');
-            document.documentElement.style.setProperty('--time-font-size', config.timeSize + 'px');
-            document.documentElement.style.setProperty('--bubble-max-width', config.maxWidth + 'px');
-            document.documentElement.style.setProperty('--bubble-padding', `${config.padding}px 12px`);
-            document.documentElement.style.setProperty('--bubble-opacity', config.opacity / 100);
-            document.documentElement.style.setProperty('--avatar-display', config.showAvatars ? 'flex' : 'none');
-        }
-
-        function updatePinDisplay() {
-            const banner = document.getElementById('pin-banner');
-            if (!banner) return;
-
-            if (!config.pinned) {
-                banner.classList.remove('show');
-                return;
-            }
-
-            banner.classList.remove('pin-tg-style');
-
-            if (config.pinType === 'tg') {
-                banner.classList.add('pin-tg-style');
-                banner.innerHTML = `
-                    <div class="pin-title">Закреплённое сообщение</div>
-                    <div class="pin-text"><b>${config.pinned.author}:</b> ${config.pinned.text}</div>
-                `;
-            } else {
-                banner.innerHTML = `<div class="pin-text" style="white-space: normal; font-weight: 500; text-align: center;">${config.pinned.text}</div>`;
-            }
-            banner.classList.add('show');
-        }
-
-        async function loadThirdPartyEmotes(channelName) {
-            try {
-                const res = await fetch('https://api.betterttv.net/3/cached/emotes/global');
-                if (res.ok) { (await res.json()).forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
-            } catch (e) {}
-            try {
-                const res = await fetch('https://7tv.io/v3/emote-sets/global');
-                if (res.ok) { const data = await res.json(); if (data.emotes) { data.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); } }
-            } catch (e) {}
-            try {
-                const idResp = await fetch(`https://decapi.me/twitch/id/${channelName}`);
-                const twitchId = (await idResp.text()).trim();
-                if (twitchId && !twitchId.includes("User not found")) {
-                    try {
-                        const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`);
-                        if (res.ok) { const data = await res.json(); const emotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])]; emotes.forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
-                    } catch (e) {}
-                    try {
-                        const res = await fetch(`https://7tv.io/v3/users/twitch/${twitchId}`);
-                        if (res.ok) { 
-                            const data = await res.json(); 
-                            if (data.emote_set && data.emote_set.emotes) { 
-                                data.emote_set.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); 
-                            } 
-                        }
-                    } catch (e) {}
-                }
-            } catch (e) {}
-        }
-
-        // ИНИЦИАЛИЗАЦИЯ КЛИЕНТА TWITCH
-        const client = new tmi.Client({
-            options: { secure: true },
-            connection: { host: 'irc-ws.chat.twitch.tv', port: 443, secure: true, reconnect: true, timeout: 10000 },
-            channels: [ config.channel ]
-        });
-
-        const chatContainer = document.getElementById('chat-container');
-
-        function getTelegramColorIndex(username) {
-            let hash = 0;
-            for (let i = 0; i < username.length; i++) { hash = username.charCodeAt(i) + ((hash << 5) - hash); }
-            return Math.abs(hash) % 20;
-        }
-
-        function parseMessageContent(text, twitchEmotes) {
-            let sortedTwitchEmotes = [];
-            if (twitchEmotes) {
-                for (let emoteId in twitchEmotes) {
-                    twitchEmotes[emoteId].forEach(rangeStr => {
-                        let [start, end] = rangeStr.split('-').map(Number);
-                        sortedTwitchEmotes.push({ start, end, url: `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0` });
-                    });
-                }
-            }
-            sortedTwitchEmotes.sort((a, b) => a.start - b.start);
-
-            let finalHtml = '';
-            let lastIndex = 0;
-
-            sortedTwitchEmotes.forEach(emote => {
-                if (emote.start > lastIndex) { finalHtml += processThirdPartyText(text.slice(lastIndex, emote.start)); }
-                finalHtml += `<img class="chat-emote" src="${emote.url}">`;
-                lastIndex = emote.end + 1;
-            });
-
-            if (lastIndex < text.length) { finalHtml += processThirdPartyText(text.slice(lastIndex)); }
-            return finalHtml;
-        }
-
-        function processThirdPartyText(rawText) {
-            let escaped = rawText.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            let words = escaped.split(' ');
-            let processedWords = words.map(word => {
-                let cleanWord = word.replace(/[.,!?]$|[.,!?](?=\s)/g, '');
-                if (customEmoteMap[cleanWord]) { return `<img class="chat-emote" src="${customEmoteMap[cleanWord]}" alt="${word}">`; }
-                return word;
-            });
-            return processedWords.join(' ');
-        }
-
-        client.on('message', async (channel, tags, message, self) => {
-            const username = tags['display-name'] || tags['username'];
-            const loginName = tags['username'];
-            const colorIndex = getTelegramColorIndex(username);
-            
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            const firstLetter = username.charAt(0);
-
-            // КОМАНДЫ УПРАВЛЕНИЯ ЗАКРЕПОМ
-            const isBroadcaster = tags.username === channel.replace('#', '').toLowerCase();
-            const isMod = tags.mod || isBroadcaster || (tags.badges && (tags.badges.broadcaster || tags.badges.moderator));
-
-            if (isMod) {
-                if (message.startsWith('!закреп ') || message.startsWith('!pin ')) {
-                    const textToPin = message.slice(message.indexOf(' ') + 1).trim();
-                    config.pinned = { text: textToPin, author: username };
-                    localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
-                    updatePinDisplay();
-                    return;
-                }
-                if (message === '!открепить' || message === '!unpin') {
-                    config.pinned = null;
-                    localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
-                    updatePinDisplay();
-                    return;
-                }
-            }
-
-            // ТЕГИ РОЛЕЙ
-            let roleBadgeHtml = '';
-            if (tags.badges) {
-                if (tags.badges.broadcaster) { roleBadgeHtml = `<span class="tg-role-badge role-broadcaster">${config.txtStreamer}</span>`; }
-                else if (tags.badges.moderator) { roleBadgeHtml = `<span class="tg-role-badge role-moderator">${config.txtMod}</span>`; }
-                else if (tags.badges.vip) { roleBadgeHtml = `<span class="tg-role-badge role-vip">${config.txtVip}</span>`; }
-            }
-
-            // ОТВЕТЫ (REPLIES)
-            let replyBlockHtml = '';
-            if (tags['reply-parent-msg-body']) {
-                const parentUser = tags['reply-parent-display-name'] || tags['reply-parent-username'];
-                const parentColorIndex = getTelegramColorIndex(parentUser);
-                const parentBody = tags['reply-parent-msg-body'].replace(/\\s/g, ' ');
-
-                replyBlockHtml = `
-                    <div class="tg-reply-wrapper bd-color-${parentColorIndex}">
-                        <span class="tg-reply-author txt-color-${parentColorIndex}">${parentUser}</span>
-                        <span class="tg-reply-body">${parentBody}</span>
-                    </div>
-                `;
-            }
-
-            const row = document.createElement('div');
-            row.classList.add('message-row');
-
-            const parsedMessage = parseMessageContent(message, tags.emotes);
-
-            row.innerHTML = `
-                <div class="tg-avatar bg-color-${colorIndex}">${firstLetter}</div>
-                <div class="tg-bubble">
-                    <div class="bubble-header">
-                        <span class="user-name txt-color-${colorIndex}" style="background: none;">${username}</span>
-                        ${roleBadgeHtml}
-                    </div>
-                    ${replyBlockHtml}
-                    <span class="user-text">${parsedMessage}</span>
-                    <span class="msg-time">${timeStr}</span>
-                </div>
-            `;
-
-            chatContainer.appendChild(row);
-
-            if (config.showAvatars) {
-                const avatarDiv = row.querySelector('.tg-avatar');
-                if (avatarCache[loginName]) {
-                    if (avatarCache[loginName] !== 'default') { avatarDiv.innerHTML = `<img src="${avatarCache[loginName]}">`; }
-                } else {
-                    try {
-                        const response = await fetch(`https://decapi.me/twitch/avatar/${loginName}`);
-                        if (response.ok) {
-                            const avatarUrl = await response.text();
-                            if (avatarUrl && !avatarUrl.includes('User not found') && !avatarUrl.includes('error')) {
-                                avatarCache[loginName] = avatarUrl;
-                                avatarDiv.innerHTML = `<img src="${avatarUrl}">`;
-                            } else { avatarCache[loginName] = 'default'; }
-                        }
-                    } catch (e) { avatarCache[loginName] = 'default'; }
-                }
-            }
-
-            if (chatContainer.children.length > 40) { chatContainer.removeChild(chatContainer.firstChild); }
-            window.scrollTo(0, document.body.scrollHeight);
-        });
-
-        // СТАРТ ВИДЖЕТА
-        applyConfigStyles();
-        updatePinDisplay();
-        loadThirdPartyEmotes(config.channel).then(() => {
-            client.connect().catch(console.error);
-        });
-    </script>
+    <script src="app.js?v=2" defer></script>
 </body>
 </html>

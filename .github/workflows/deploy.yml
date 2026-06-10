@@ -1,0 +1,41 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache-Busting version update
+        run: |
+          sed -i 's/?v=2/?v=${{ github.sha }}/g' index.html
+
+      - name: Deploy to GitHub Pages (dev branch)
+        if: github.ref_name == 'dev'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages
+          target-folder: dev
+          clean: true
+
+      - name: Deploy to GitHub Pages (main branch)
+        if: github.ref_name == 'main'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: .
+          branch: gh-pages
+          target-folder: .
+          clean: true
+          clean-exclude: |
+            dev
