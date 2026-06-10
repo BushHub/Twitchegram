@@ -15,8 +15,45 @@ const DEFAULT_CONFIG = {
     messageLifetime: 0, // 0 = не скрывать
     useLinkSpoiler: true,
     bubbleColor: '#182533',
-    textColor: '#f5f5f5'
+    textColor: '#f5f5f5',
+    theme: 'light',
+    // Новые параметры v7.5.0
+    fontFamily: 'system',
+    pinBgColor: '#ffffff',
+    pinTextColor: '#1c1c1c',
+    pinOpacity: 100,
+    pinFontSize: 13,
+    outgoingEnabled: false,
+    outgoingSync: true,
+    outgoingBubbleColor: '#2b5278',
+    outgoingTextColor: '#f5f5f5',
+    incomingMargin: 0,
+    outgoingMargin: 0
 };
+
+const FONT_MAP = {
+    system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    inter: '"Inter", sans-serif',
+    roboto: '"Roboto", sans-serif',
+    montserrat: '"Montserrat", sans-serif',
+    nunito: '"Nunito", sans-serif',
+    play: '"Play", sans-serif'
+};
+
+const OUTGOING_DEFAULTS = {
+    '#182533': { bubble: '#2b5278', text: '#f5f5f5' }, // Telegram Dark
+    '#eef2f6': { bubble: '#effdde', text: '#1c1c1c' }, // Telegram Light
+    '#2b5278': { bubble: '#1c3e5d', text: '#f5f5f5' }, // Telegram Classic Green
+    '#2d2522': { bubble: '#443632', text: '#f5ebd6' }, // Cozy Peach
+    '#e2f3eb': { bubble: '#cdeee1', text: '#1c2d24' }  // Retro Mint
+};
+
+function isLightColor(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return false;
+    const luma = 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+    return luma > 180;
+}
 
 let config = { ...DEFAULT_CONFIG };
 
@@ -30,19 +67,21 @@ if (localStorage.getItem('tg_twitch_config_v7')) {
     } catch (e) {}
 }
 
+document.documentElement.setAttribute('data-theme', config.theme || 'dark');
+
 // Функция проксирования 7TV ресурсов для обхода блокировок в РФ
 function proxyUrl(url) {
     if (!config.use7tvProxy) return url;
     if (!url) return url;
     
-    // Проксирование запросов к API 7TV
-    if (url.includes('7tv.io') && (url.includes('/emote-sets/') || url.includes('/users/'))) {
+    // Проксирование запросов к API 7TV, Decapi и IVR
+    if ((url.includes('7tv.io') && (url.includes('/emote-sets/') || url.includes('/users/'))) || url.includes('decapi.me') || url.includes('ivr.fi')) {
         return 'https://corsproxy.io/?' + encodeURIComponent(url);
     }
-    // Проксирование картинок 7TV через зеркало-оптимизатор
+    // Проксирование картинок 7TV через зеркало-оптимизатор wsrv.nl (вместо заблокированного в РФ images.weserv.nl)
     if (url.includes('7tv.app') || url.includes('7tv.io')) {
         const clean = url.replace(/^https?:\/\//, '');
-        return 'https://images.weserv.nl/?url=' + encodeURIComponent(clean);
+        return 'https://wsrv.nl/?url=' + encodeURIComponent(clean);
     }
     return url;
 }
@@ -68,7 +107,90 @@ function openAdminPanel() {
 
 function closeAdminPanel() {
     document.getElementById('config-view').style.display = 'none';
+    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
 }
+
+// Кастомный confirm (native confirm() заблокирован в OBS Browser Source)
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-msg-text').textContent = message;
+        modal.classList.add('open');
+
+        const okBtn = document.getElementById('confirm-btn-ok');
+        const cancelBtn = document.getElementById('confirm-btn-cancel');
+        const backdrop = document.getElementById('confirm-backdrop');
+
+        function cleanup(result) {
+            modal.classList.remove('open');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            backdrop.removeEventListener('click', onCancel);
+            resolve(result);
+        }
+        function onOk() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        backdrop.addEventListener('click', onCancel);
+    });
+}
+
+// Toggle-группа (заменяет <select> для совместимости с OBS)
+window.setToggle = function(groupId, value) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    group.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === value);
+    });
+    if (groupId === 'adm-theme') {
+        document.documentElement.setAttribute('data-theme', value);
+    }
+};
+
+function getToggleValue(groupId) {
+    const group = document.getElementById(groupId);
+    if (!group) return null;
+    const active = group.querySelector('.toggle-btn.active');
+    return active ? active.dataset.value : null;
+}
+
+// Синхронизация свотча с hex-инпутом
+function syncColorSwatch(inputId, swatchId) {
+    const input = document.getElementById(inputId);
+    const swatch = document.getElementById(swatchId);
+    if (!input || !swatch) return;
+    const update = () => {
+        const val = input.value.trim();
+        if (/^#[0-9a-fA-F]{6}$/.test(val)) swatch.style.background = val;
+    };
+    if (input._swatchListener) input.removeEventListener('input', input._swatchListener);
+    input._swatchListener = update;
+    input.addEventListener('input', update);
+    update();
+}
+
+window.applyPreset = function(bubbleColor, textColor) {
+    document.getElementById('adm-bubble-color').value = bubbleColor;
+    document.getElementById('adm-text-color').value = textColor;
+    syncColorSwatch('adm-bubble-color', 'swatch-bubble');
+    syncColorSwatch('adm-text-color', 'swatch-text');
+};
+
+window.toggleOutgoingSection = function() {
+    const enabled = document.getElementById('adm-outgoing-enabled').checked;
+    document.getElementById('outgoing-sub-options').style.display = enabled ? 'block' : 'none';
+    const outgoingMarginGroup = document.getElementById('group-outgoing-margin');
+    if (outgoingMarginGroup) {
+        outgoingMarginGroup.style.display = enabled ? 'block' : 'none';
+    }
+};
+
+window.toggleOutgoingColors = function() {
+    const sync = document.getElementById('adm-outgoing-sync').checked;
+    document.getElementById('outgoing-color-row').style.display = sync ? 'none' : 'flex';
+};
 
 function setupAdminFields() {
     document.getElementById('adm-channel').value = config.channel;
@@ -81,7 +203,7 @@ function setupAdminFields() {
     document.getElementById('adm-role-broadcaster').value = config.txtStreamer;
     document.getElementById('adm-role-moderator').value = config.txtMod;
     document.getElementById('adm-role-vip').value = config.txtVip;
-    document.getElementById('adm-pin-type').value = config.pinType;
+    setToggle('adm-pin-type', config.pinType || 'tg');
     
     // Новые поля
     document.getElementById('adm-proxy').checked = config.use7tvProxy;
@@ -91,6 +213,34 @@ function setupAdminFields() {
     document.getElementById('adm-spoiler').checked = config.useLinkSpoiler;
     document.getElementById('adm-bubble-color').value = config.bubbleColor || '#182533';
     document.getElementById('adm-text-color').value = config.textColor || '#f5f5f5';
+    syncColorSwatch('adm-bubble-color', 'swatch-bubble');
+    syncColorSwatch('adm-text-color', 'swatch-text');
+    
+    // Phase 5 fields
+    setToggle('adm-theme', config.theme || 'light');
+
+    // v7.5.0 новые поля закрепа
+    document.getElementById('adm-pin-bg-color').value = config.pinBgColor || '#ffffff';
+    document.getElementById('adm-pin-text-color').value = config.pinTextColor || '#1c1c1c';
+    document.getElementById('adm-pin-opacity').value = config.pinOpacity || 100;
+    document.getElementById('adm-pin-font-size').value = config.pinFontSize || 13;
+    syncColorSwatch('adm-pin-bg-color', 'swatch-pin-bg');
+    syncColorSwatch('adm-pin-text-color', 'swatch-pin-text');
+
+    // v7.5.0 новые поля шрифтов
+    setToggle('adm-font-family', config.fontFamily || 'system');
+
+    // v7.5.0 новые поля сообщений стримера
+    document.getElementById('adm-outgoing-enabled').checked = config.outgoingEnabled || false;
+    document.getElementById('adm-outgoing-sync').checked = config.outgoingSync !== false;
+    document.getElementById('adm-outgoing-bubble-color').value = config.outgoingBubbleColor || '#2b5278';
+    document.getElementById('adm-outgoing-text-color').value = config.outgoingTextColor || '#f5f5f5';
+    syncColorSwatch('adm-outgoing-bubble-color', 'swatch-outgoing-bubble');
+    syncColorSwatch('adm-outgoing-text-color', 'swatch-outgoing-text');
+
+    // v7.5.0 новые поля отступов входящих/исходящих
+    document.getElementById('adm-incoming-margin').value = config.incomingMargin || 0;
+    document.getElementById('adm-outgoing-margin').value = config.outgoingMargin || 0;
 
     document.getElementById('adm-max-width').oninput = function() { document.getElementById('val-max-width').innerText = this.value + 'px'; }
     document.getElementById('adm-padding').oninput = function() { document.getElementById('val-padding').innerText = this.value + 'px'; }
@@ -98,11 +248,23 @@ function setupAdminFields() {
     document.getElementById('adm-lifetime').oninput = function() { 
         document.getElementById('val-lifetime').innerText = this.value === '0' ? 'Отключено' : this.value + ' сек'; 
     }
+    document.getElementById('adm-pin-opacity').oninput = function() { document.getElementById('val-pin-opacity').innerText = this.value + '%'; }
+    document.getElementById('adm-incoming-margin').oninput = function() { document.getElementById('val-incoming-margin').innerText = this.value + 'px'; }
+    document.getElementById('adm-outgoing-margin').oninput = function() { document.getElementById('val-outgoing-margin').innerText = this.value + 'px'; }
     
     document.getElementById('adm-max-width').oninput();
     document.getElementById('adm-padding').oninput();
     document.getElementById('adm-opacity').oninput();
     document.getElementById('adm-lifetime').oninput();
+    document.getElementById('adm-pin-opacity').oninput();
+    document.getElementById('adm-incoming-margin').oninput();
+    document.getElementById('adm-outgoing-margin').oninput();
+
+    // Скрытие/показ опций исходящих сообщений стримера
+    toggleOutgoingSection();
+    toggleOutgoingColors();
+    
+    document.documentElement.setAttribute('data-theme', config.theme || 'light');
 }
 
 function adminSave() {
@@ -116,7 +278,7 @@ function adminSave() {
     config.txtStreamer = document.getElementById('adm-role-broadcaster').value.trim() || 'Стример';
     config.txtMod = document.getElementById('adm-role-moderator').value.trim() || 'Модератор';
     config.txtVip = document.getElementById('adm-role-vip').value.trim() || 'VIP';
-    config.pinType = document.getElementById('adm-pin-type').value;
+    config.pinType = getToggleValue('adm-pin-type') || 'tg';
     
     // Новые поля
     config.use7tvProxy = document.getElementById('adm-proxy').checked;
@@ -126,6 +288,28 @@ function adminSave() {
     config.useLinkSpoiler = document.getElementById('adm-spoiler').checked;
     config.bubbleColor = document.getElementById('adm-bubble-color').value;
     config.textColor = document.getElementById('adm-text-color').value;
+    
+    // Phase 5 fields
+    config.theme = getToggleValue('adm-theme') || 'light';
+
+    // v7.5.0 новые поля закрепа
+    config.pinBgColor = document.getElementById('adm-pin-bg-color').value;
+    config.pinTextColor = document.getElementById('adm-pin-text-color').value;
+    config.pinOpacity = parseInt(document.getElementById('adm-pin-opacity').value) || 100;
+    config.pinFontSize = parseInt(document.getElementById('adm-pin-font-size').value) || 13;
+
+    // v7.5.0 новые поля шрифтов
+    config.fontFamily = getToggleValue('adm-font-family') || 'system';
+
+    // v7.5.0 новые поля исходящих стримера
+    config.outgoingEnabled = document.getElementById('adm-outgoing-enabled').checked;
+    config.outgoingSync = document.getElementById('adm-outgoing-sync').checked;
+    config.outgoingBubbleColor = document.getElementById('adm-outgoing-bubble-color').value;
+    config.outgoingTextColor = document.getElementById('adm-outgoing-text-color').value;
+
+    // v7.5.0 новые поля отступов
+    config.incomingMargin = parseInt(document.getElementById('adm-incoming-margin').value) || 0;
+    config.outgoingMargin = parseInt(document.getElementById('adm-outgoing-margin').value) || 0;
 
     localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
     applyConfigStyles();
@@ -133,14 +317,15 @@ function adminSave() {
     closeAdminPanel();
 }
 
-function resetSection(section) {
-    if (!confirm('Вы уверены, что хотите сбросить настройки этого раздела к значениям по умолчанию?')) {
-        return;
-    }
+async function resetSection(section) {
+    const confirmed = await showConfirm('Вы уверены, что хотите сбросить настройки этого раздела к значениям по умолчанию?');
+    if (!confirmed) return;
     
     if (section === 'geometry') {
         config.maxWidth = DEFAULT_CONFIG.maxWidth;
         config.padding = DEFAULT_CONFIG.padding;
+        config.incomingMargin = DEFAULT_CONFIG.incomingMargin;
+        config.outgoingMargin = DEFAULT_CONFIG.outgoingMargin;
     } else if (section === 'visual') {
         config.fontSize = DEFAULT_CONFIG.fontSize;
         config.timeSize = DEFAULT_CONFIG.timeSize;
@@ -149,19 +334,31 @@ function resetSection(section) {
         config.bubbleColor = DEFAULT_CONFIG.bubbleColor;
         config.textColor = DEFAULT_CONFIG.textColor;
         config.showAvatars = DEFAULT_CONFIG.showAvatars;
+        config.theme = DEFAULT_CONFIG.theme;
+        config.fontFamily = DEFAULT_CONFIG.fontFamily;
     } else if (section === 'roles') {
         config.txtStreamer = DEFAULT_CONFIG.txtStreamer;
         config.txtMod = DEFAULT_CONFIG.txtMod;
         config.txtVip = DEFAULT_CONFIG.txtVip;
+    } else if (section === 'pin') {
+        config.pinType = DEFAULT_CONFIG.pinType;
+        config.pinBgColor = DEFAULT_CONFIG.pinBgColor;
+        config.pinTextColor = DEFAULT_CONFIG.pinTextColor;
+        config.pinOpacity = DEFAULT_CONFIG.pinOpacity;
+        config.pinFontSize = DEFAULT_CONFIG.pinFontSize;
+    } else if (section === 'streamer-msg') {
+        config.outgoingEnabled = DEFAULT_CONFIG.outgoingEnabled;
+        config.outgoingSync = DEFAULT_CONFIG.outgoingSync;
+        config.outgoingBubbleColor = DEFAULT_CONFIG.outgoingBubbleColor;
+        config.outgoingTextColor = DEFAULT_CONFIG.outgoingTextColor;
     }
     
     setupAdminFields();
 }
 
-function resetAllConfig() {
-    if (!confirm('ВНИМАНИЕ! Вы уверены, что хотите сбросить ВСЕ настройки чата к первоначальным значениям по умолчанию?')) {
-        return;
-    }
+async function resetAllConfig() {
+    const confirmed = await showConfirm('ВНИМАНИЕ! Вы уверены, что хотите сбросить ВСЕ настройки чата к первоначальным значениям по умолчанию?');
+    if (!confirmed) return;
     
     config = { ...DEFAULT_CONFIG };
     setupAdminFields();
@@ -179,6 +376,7 @@ function hexToRgb(hex) {
 }
 
 function applyConfigStyles() {
+    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
     document.documentElement.style.setProperty('--chat-font-size', config.fontSize + 'px');
     document.documentElement.style.setProperty('--time-font-size', config.timeSize + 'px');
     document.documentElement.style.setProperty('--bubble-max-width', config.maxWidth + 'px');
@@ -190,6 +388,48 @@ function applyConfigStyles() {
     const opacityValue = config.opacity / 100;
     document.documentElement.style.setProperty('--bubble-color', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacityValue})`);
     document.documentElement.style.setProperty('--text-color', config.textColor || '#f5f5f5');
+
+    // Применение шрифта
+    const fontValue = FONT_MAP[config.fontFamily] || FONT_MAP.system;
+    document.documentElement.style.setProperty('--chat-font-family', fontValue);
+
+    // Применение стилей закрепа
+    const pinBgRgb = hexToRgb(config.pinBgColor || '#ffffff') || { r: 255, g: 255, b: 255 };
+    const pinTextRgb = hexToRgb(config.pinTextColor || '#1c1c1c') || { r: 28, g: 28, b: 28 };
+    const pinOpacityValue = (config.pinOpacity || 100) / 100;
+    document.documentElement.style.setProperty('--pin-bg-color', `rgba(${pinBgRgb.r}, ${pinBgRgb.g}, ${pinBgRgb.b}, ${pinOpacityValue})`);
+    document.documentElement.style.setProperty('--pin-text-color', config.pinTextColor || '#1c1c1c');
+    document.documentElement.style.setProperty('--pin-font-size', (config.pinFontSize || 13) + 'px');
+    document.documentElement.style.setProperty('--pin-border-color', `rgba(${pinTextRgb.r}, ${pinTextRgb.g}, ${pinTextRgb.b}, 0.12)`);
+
+    // Применение стилей исходящих сообщений
+    let outBg = config.outgoingBubbleColor || '#2b5278';
+    let outText = config.outgoingTextColor || '#f5f5f5';
+    if (config.outgoingSync) {
+        const matched = OUTGOING_DEFAULTS[config.bubbleColor];
+        if (matched) {
+            outBg = matched.bubble;
+            outText = matched.text;
+        } else {
+            // Если нет в пресетах, рассчитываем исходя из яркости входящих
+            if (isLightColor(config.bubbleColor || '#182533')) {
+                outBg = '#effdde'; // Светло-зеленый (Telegram Light outgoing)
+                outText = '#1c1c1c';
+            } else {
+                outBg = '#2b5278'; // Темно-синий (Telegram Dark outgoing)
+                outText = '#f5f5f5';
+            }
+        }
+    }
+    const outBgRgb = hexToRgb(outBg) || { r: 43, g: 82, b: 120 };
+    const outTextRgb = hexToRgb(outText) || { r: 245, g: 245, b: 245 };
+    document.documentElement.style.setProperty('--outgoing-bubble-color', `rgba(${outBgRgb.r}, ${outBgRgb.g}, ${outBgRgb.b}, ${opacityValue})`);
+    document.documentElement.style.setProperty('--outgoing-text-color', outText);
+    document.documentElement.style.setProperty('--outgoing-time-color', `rgba(${outTextRgb.r}, ${outTextRgb.g}, ${outTextRgb.b}, 0.6)`);
+
+    // Применение отступов
+    document.documentElement.style.setProperty('--incoming-margin', (config.incomingMargin || 0) + 'px');
+    document.documentElement.style.setProperty('--outgoing-margin', (config.outgoingMargin || 0) + 'px');
 }
 
 function updatePinDisplay() {
@@ -216,6 +456,37 @@ function updatePinDisplay() {
 }
 
 async function loadThirdPartyEmotes(channelName) {
+    const cleanChannel = channelName.replace('#', '').trim();
+    let twitchId = '';
+    
+    // Попытка 1: Получить Twitch ID через DecAPI (проксированный)
+    try {
+        const idResp = await fetch(proxyUrl(`https://decapi.me/twitch/id/${cleanChannel}`));
+        if (idResp.ok) {
+            const txt = (await idResp.text()).trim();
+            if (txt && !txt.includes("User not found") && !txt.includes("error")) {
+                twitchId = txt;
+            }
+        }
+    } catch (e) {
+        console.error("Decapi ID error:", e);
+    }
+    
+    // Попытка 2 (резервная): Получить Twitch ID через API ivr.fi
+    if (!twitchId) {
+        try {
+            const ivrResp = await fetch(proxyUrl(`https://api.ivr.fi/v2/twitch/user?login=${cleanChannel}`));
+            if (ivrResp.ok) {
+                const arr = await ivrResp.json();
+                if (arr && arr[0] && arr[0].id) {
+                    twitchId = arr[0].id;
+                }
+            }
+        } catch (e) {
+            console.error("IVR ID error:", e);
+        }
+    }
+
     try {
         const res = await fetch('https://api.betterttv.net/3/cached/emotes/global');
         if (res.ok) { (await res.json()).forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
@@ -224,25 +495,22 @@ async function loadThirdPartyEmotes(channelName) {
         const res = await fetch(proxyUrl('https://7tv.io/v3/emote-sets/global'));
         if (res.ok) { const data = await res.json(); if (data.emotes) { data.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); } }
     } catch (e) {}
-    try {
-        const idResp = await fetch(`https://decapi.me/twitch/id/${channelName}`);
-        const twitchId = (await idResp.text()).trim();
-        if (twitchId && !twitchId.includes("User not found")) {
-            try {
-                const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`);
-                if (res.ok) { const data = await res.json(); const emotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])]; emotes.forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
-            } catch (e) {}
-            try {
-                const res = await fetch(proxyUrl(`https://7tv.io/v3/users/twitch/${twitchId}`));
-                if (res.ok) { 
-                    const data = await res.json(); 
-                    if (data.emote_set && data.emote_set.emotes) { 
-                        data.emote_set.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); 
-                    } 
-                }
-            } catch (e) {}
-        }
-    } catch (e) {}
+    
+    if (twitchId) {
+        try {
+            const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`);
+            if (res.ok) { const data = await res.json(); const emotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])]; emotes.forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
+        } catch (e) {}
+        try {
+            const res = await fetch(proxyUrl(`https://7tv.io/v3/users/twitch/${twitchId}`));
+            if (res.ok) { 
+                const data = await res.json(); 
+                if (data.emote_set && data.emote_set.emotes) { 
+                    data.emote_set.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); 
+                } 
+            }
+        } catch (e) {}
+    }
 }
 
 // ИНИЦИАЛИЗАЦИЯ КЛИЕНТА TWITCH
@@ -328,7 +596,7 @@ client.on('message', async (channel, tags, message, self) => {
     const firstLetter = username.charAt(0);
 
     // КОМАНДЫ УПРАВЛЕНИЯ ЗАКРЕПОМ
-    const isBroadcaster = tags.username === channel.replace('#', '').toLowerCase();
+    const isBroadcaster = tags.username === channel.replace('#', '').toLowerCase() || !!(tags.badges && tags.badges.broadcaster);
     const isMod = tags.mod || isBroadcaster || (tags.badges && (tags.badges.broadcaster || tags.badges.moderator));
 
     if (isMod) {
@@ -370,23 +638,39 @@ client.on('message', async (channel, tags, message, self) => {
         `;
     }
 
+    const isOutgoing = config.outgoingEnabled && isBroadcaster;
+
     const row = document.createElement('div');
     row.classList.add('message-row');
+    if (isOutgoing) {
+        row.classList.add('outgoing');
+    }
 
     const parsedMessage = parseMessageContent(message, tags.emotes);
 
-    row.innerHTML = `
-        <div class="tg-avatar bg-color-${colorIndex}">${firstLetter}</div>
-        <div class="tg-bubble">
-            <div class="bubble-header">
-                <span class="user-name txt-color-${colorIndex}" style="background: none;">${username}</span>
-                ${roleBadgeHtml}
+    if (isOutgoing) {
+        row.innerHTML = `
+            <div class="tg-avatar bg-color-${colorIndex}" style="display: none;">${firstLetter}</div>
+            <div class="tg-bubble">
+                ${replyBlockHtml}
+                <span class="user-text">${parsedMessage}</span>
+                <span class="msg-time">${timeStr}</span>
             </div>
-            ${replyBlockHtml}
-            <span class="user-text">${parsedMessage}</span>
-            <span class="msg-time">${timeStr}</span>
-        </div>
-    `;
+        `;
+    } else {
+        row.innerHTML = `
+            <div class="tg-avatar bg-color-${colorIndex}">${firstLetter}</div>
+            <div class="tg-bubble">
+                <div class="bubble-header">
+                    <span class="user-name txt-color-${colorIndex}" style="background: none;">${username}</span>
+                    ${roleBadgeHtml}
+                </div>
+                ${replyBlockHtml}
+                <span class="user-text">${parsedMessage}</span>
+                <span class="msg-time">${timeStr}</span>
+            </div>
+        `;
+    }
 
     chatContainer.appendChild(row);
 
@@ -420,13 +704,36 @@ client.on('message', async (channel, tags, message, self) => {
             if (avatarCache[loginName] !== 'default') { avatarDiv.innerHTML = `<img src="${avatarCache[loginName]}">`; }
         } else {
             try {
-                const response = await fetch(`https://decapi.me/twitch/avatar/${loginName}`);
-                if (response.ok) {
-                    const avatarUrl = await response.text();
-                    if (avatarUrl && !avatarUrl.includes('User not found') && !avatarUrl.includes('error')) {
-                        avatarCache[loginName] = avatarUrl;
-                        avatarDiv.innerHTML = `<img src="${avatarUrl}">`;
-                    } else { avatarCache[loginName] = 'default'; }
+                let avatarUrl = '';
+                // Попытка 1: Загрузить аватар через DecAPI (проксированный)
+                try {
+                    const response = await fetch(proxyUrl(`https://decapi.me/twitch/avatar/${loginName}`));
+                    if (response.ok) {
+                        const txt = await response.text();
+                        if (txt && !txt.includes('User not found') && !txt.includes('error')) {
+                            avatarUrl = txt.trim();
+                        }
+                    }
+                } catch (decErr) {}
+
+                // Попытка 2 (резервная): Загрузить аватар через API ivr.fi (проксированный)
+                if (!avatarUrl) {
+                    try {
+                        const ivrResponse = await fetch(proxyUrl(`https://api.ivr.fi/v2/twitch/user?login=${loginName}`));
+                        if (ivrResponse.ok) {
+                            const arr = await ivrResponse.json();
+                            if (arr && arr[0] && arr[0].logo) {
+                                avatarUrl = arr[0].logo;
+                            }
+                        }
+                    } catch (ivrErr) {}
+                }
+
+                if (avatarUrl) {
+                    avatarCache[loginName] = avatarUrl;
+                    avatarDiv.innerHTML = `<img src="${avatarUrl}">`;
+                } else {
+                    avatarCache[loginName] = 'default';
                 }
             } catch (e) { avatarCache[loginName] = 'default'; }
         }

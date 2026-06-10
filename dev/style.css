@@ -8,13 +8,37 @@
     --avatar-display: flex;
     --bubble-color: rgba(24, 37, 51, 1.0);
     --text-color: #f5f5f5;
+    
+    /* Палитра интерфейса настроек (По умолчанию Тёмная тема) */
+    --bg-admin-view: #17212b;
+    --bg-admin-panel: #24303f;
+    --bg-admin-section: #1c2735;
+    --border-admin: #2f3e50;
+    --text-admin-main: #ffffff;
+    --text-admin-sec: #7f91a4;
+    --text-admin-label: #b1c3d5;
+    --input-bg: #24303f;
+    --input-border: #3b4e66;
+}
+
+/* Переопределения палитры для Светлой темы */
+html[data-theme="light"] {
+    --bg-admin-view: #f4f6fa;
+    --bg-admin-panel: #ffffff;
+    --bg-admin-section: #f7f9fa;
+    --border-admin: #dfe3e6;
+    --text-admin-main: #1c1c1c;
+    --text-admin-sec: #707579;
+    --text-admin-label: #4f5b66;
+    --input-bg: #ffffff;
+    --input-border: #d2dbe3;
 }
 
 body {
     background: transparent;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--chat-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
     overflow: hidden;
     height: 100vh;
     width: 100vw;
@@ -62,8 +86,9 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background: #17212b;
-    border-bottom: 1px solid #242f3d;
+    background: var(--pin-bg-color, #ffffff);
+    border-bottom: 1px solid var(--pin-border-color, rgba(0,0,0,0.1));
+    color: var(--pin-text-color, #1c1c1c);
     padding: 10px 20px;
     z-index: 900;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -76,8 +101,8 @@ body {
     opacity: 1;
 }
 .pin-tg-style { border-left: 3px solid #5288c1; padding-left: 10px; }
-.pin-title { font-size: 11px; font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
-.pin-text { color: #f5f5f5; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-title { font-size: calc(var(--pin-font-size, 13px) - 2px); font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
+.pin-text { color: inherit; font-size: var(--pin-font-size, 13px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* КОНТЕЙНЕР ДЛЯ ЛЕНТЫ ЧАТА */
 #chat-container {
@@ -95,6 +120,7 @@ body {
     opacity: 0;
     transform: translateY(15px);
     overflow: visible;
+    margin-left: var(--incoming-margin, 0px);
 }
 @keyframes tg-appear { to { opacity: 1; transform: translateY(0); } }
 
@@ -234,8 +260,8 @@ body {
     left: 0; 
     width: 100vw; 
     height: 100vh; 
-    background: #17212b; 
-    color: white; 
+    background: var(--bg-admin-view); 
+    color: var(--text-admin-main); 
     padding: 30px; 
     box-sizing: border-box; 
     overflow-y: auto; 
@@ -244,11 +270,11 @@ body {
 .admin-panel { 
     max-width: 600px; 
     margin: 0 auto; 
-    background: #24303f; 
+    background: var(--bg-admin-panel); 
     padding: 25px; 
     border-radius: 12px; 
     box-shadow: 0 8px 24px rgba(0,0,0,0.6); 
-    border: 1px solid #2f3e50; 
+    border: 1px solid var(--border-admin); 
     position: relative; 
 }
 .admin-panel h2 { margin-top: 0; margin-bottom: 4px; color: #5288c1; }
@@ -259,23 +285,23 @@ body {
     top: 20px; 
     right: 20px; 
     cursor: pointer; 
-    color: #7f91a4; 
+    color: var(--text-admin-sec); 
     font-size: 14px; 
     font-weight: bold; 
-    background: #1c2735; 
+    background: var(--bg-admin-section); 
     padding: 6px 12px; 
     border-radius: 6px; 
-    border: 1px solid #2f3e50; 
+    border: 1px solid var(--border-admin); 
 }
-.admin-close-btn:hover { color: white; background: #2f3e50; }
+.admin-close-btn:hover { color: var(--text-admin-main); background: var(--border-admin); }
 
-.version-tag { display: block; font-size: 11px; color: #7f91a4; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-.admin-section { margin-bottom: 20px; background: #1c2735; padding: 15px; border-radius: 8px; }
-.admin-section h4 { margin: 0 0 12px 0; color: #7f91a4; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.version-tag { display: block; font-size: 11px; color: var(--text-admin-sec); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+.admin-section { margin-bottom: 20px; background: var(--bg-admin-section); padding: 15px; border-radius: 8px; }
+.admin-section h4 { margin: 0 0 12px 0; color: var(--text-admin-sec); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-size: 13px; color: #b1c3d5; margin-bottom: 6px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-admin-label); margin-bottom: 6px; }
 .form-group input[type="text"], .form-group input[type="number"], .form-group select {
-    width: 100%; background: #24303f; border: 1px solid #3b4e66; border-radius: 6px; color: white; padding: 8px 12px; box-sizing: border-box; font-size: 14px;
+    width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-admin-main); padding: 8px 12px; box-sizing: border-box; font-size: 14px;
 }
 .form-group input[type="range"] { width: 100%; margin-top: 5px; }
 .form-inline { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-top: 10px; }
@@ -337,6 +363,44 @@ body {
 }
 .hint { font-size: 11px; color: #6c7883; margin-top: 4px; display: block; }
 
+/* ЦВЕТОВЫЕ ПРЕСЕТЫ */
+.theme-presets {
+    margin-top: 12px;
+}
+.preset-title {
+    font-size: 12px;
+    color: var(--text-admin-label);
+    display: block;
+    margin-bottom: 8px;
+}
+.preset-list {
+    display: flex;
+    gap: 12px;
+}
+.preset-item {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.preset-item:hover {
+    transform: scale(1.2);
+}
+
+/* СТРОКА АВТОРСТВА */
+.creator-tag {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-admin-sec);
+    margin-top: 20px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
 /* АДАПТИВНОСТЬ ДЛЯ ВЕРТИКАЛЬНОГО РЕЖИМА И УЗКИХ ЭКРАНОВ (OBS INTERACT) */
 @media (max-width: 600px) {
     #config-view {
@@ -367,3 +431,164 @@ body {
         gap: 10px;
     }
 }
+
+/* ПЕРЕКЛЮЧАТЕЛЬ ТЕМА/РЕЖИМ (заменяет <select> для совместимости с OBS) */
+.toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    background: var(--bg-admin-view);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.toggle-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-admin-sec);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+}
+.toggle-btn.active {
+    background: #5288c1;
+    color: white;
+}
+.toggle-btn:hover:not(.active) {
+    background: var(--border-admin);
+    color: var(--text-admin-main);
+}
+
+/* HEX ЦВЕТ-ИНПУТ С СВОТЧЕМ (заменяет <input type="color">) */
+.color-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid var(--input-border);
+    flex-shrink: 0;
+    background: #182533;
+    transition: background 0.15s ease;
+}
+.color-input-wrap input[type="text"] {
+    width: 100%;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-admin-main) !important;
+    font-size: 14px;
+    outline: none;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+
+/* КАСТОМНЫЙ ДИАЛОГ ПОДТВЕРЖДЕНИЯ (заменяет confirm() для OBS) */
+#confirm-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+}
+#confirm-modal.open {
+    display: flex;
+}
+.confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+}
+.confirm-box {
+    position: relative;
+    background: var(--bg-admin-panel);
+    border: 1px solid var(--border-admin);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 300px;
+    width: 88%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+.confirm-msg {
+    color: var(--text-admin-main);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 20px 0;
+}
+.confirm-actions {
+    display: flex;
+    gap: 10px;
+}
+.confirm-btn-cancel {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border-admin);
+    color: var(--text-admin-sec);
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+.confirm-btn-ok {
+    flex: 1;
+    background: #e17076;
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+.confirm-btn-cancel:hover { background: var(--border-admin); }
+.confirm-btn-ok:hover { background: #c85b60; }
+
+/* ИСХОДЯЩИЕ СООБЩЕНИЯ СТРИМЕРА (TELEGRAM-STYLE OUTGOING) */
+.message-row.outgoing {
+    justify-content: flex-end;
+    margin-right: var(--outgoing-margin, 0px);
+    margin-left: 0 !important;
+}
+.message-row.outgoing .tg-avatar {
+    display: none !important;
+}
+.message-row.outgoing .tg-bubble {
+    border-radius: 14px 14px 3px 14px;
+    background-color: var(--outgoing-bubble-color, #2b5278);
+}
+.message-row.outgoing .user-text {
+    color: var(--outgoing-text-color, #f5f5f5);
+}
+.message-row.outgoing .msg-time {
+    color: var(--outgoing-time-color, rgba(255, 255, 255, 0.6));
+}
+.message-row.outgoing .bubble-header {
+    display: none !important;
+}
+.message-row.outgoing .tg-reply-wrapper {
+    background: rgba(255, 255, 255, 0.08);
+}
+

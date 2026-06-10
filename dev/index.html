@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <title>Twitchegram chat</title>
     <script src="https://github.com/tmijs/tmi.js/releases/download/v1.5.0/tmi.min.js"></script>
-    <link rel="stylesheet" href="style.css?v=05e45f2e8fc4b23b24cc303883f2365fde413b3c">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Play:wght@400;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=414bad8f722e4694e0840d775d4bb8360219a1f6">
 </head>
 <body>
 
@@ -20,8 +23,8 @@
     <div id="config-view">
         <div class="admin-panel">
             <div class="admin-close-btn" onclick="closeAdminPanel()">Закрыть ✕</div>
-            <h2>Настройки Twitchegram чата</h2>
-            <span class="version-tag">Версия v7.4 Gear Edition</span>
+            <h2>Twitchegram Settings</h2>
+            <div class="version-tag">Версия v.7.5.0</div>
             
             <div class="admin-section">
                 <h4>Основные настройки</h4>
@@ -31,7 +34,7 @@
                 </div>
                 <div class="form-inline">
                     <input type="checkbox" id="adm-proxy">
-                    <label for="adm-proxy">Обход блокировки 7TV (Прокси РФ)</label>
+                    <label for="adm-proxy">Оптимизация и обход блокировок (7TV / Аватарки)</label>
                 </div>
                 <div class="form-inline">
                     <input type="checkbox" id="adm-spoiler">
@@ -40,15 +43,56 @@
             </div>
 
             <div class="admin-section">
-                <h4>Система Закрепов (Pinned Messages)</h4>
+                <h4>Интерфейс настроек</h4>
                 <div class="form-group">
-                    <label for="adm-pin-type">Стиль отображения закрепа:</label>
-                    <select id="adm-pin-type">
-                        <option value="tg">Стиль Telegram (С указанием автора)</option>
-                        <option value="text">Простой текст (Простой чистый баннер)</option>
-                    </select>
+                    <label>Тема панели управления:</label>
+                    <div class="toggle-group" id="adm-theme">
+                        <button class="toggle-btn" data-value="light" onclick="setToggle('adm-theme', 'light')">☀️ Светлая</button>
+                        <button class="toggle-btn" data-value="dark" onclick="setToggle('adm-theme', 'dark')">🌙 Тёмная</button>
+                    </div>
                 </div>
-                <span class="hint">Управление закрепом прямо из чата: <b>!закреп [текст]</b> и <b>!открепить</b> (Доступно стримеру и модераторам).</span>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-header-row">
+                    <h4>Настройки закрепа (Pinned Message)</h4>
+                    <span class="section-reset-link" onclick="resetSection('pin')">Сбросить раздел</span>
+                </div>
+                <div class="form-group">
+                    <label>Стиль отображения закрепа:</label>
+                    <div class="toggle-group" id="adm-pin-type">
+                        <button class="toggle-btn" data-value="tg" onclick="setToggle('adm-pin-type', 'tg')">📎 С автором</button>
+                        <button class="toggle-btn" data-value="text" onclick="setToggle('adm-pin-type', 'text')">📄 Простой текст</button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Цвет фона закрепа (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-pin-bg"></span>
+                            <input type="text" id="adm-pin-bg-color" placeholder="#ffffff" maxlength="7">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Цвет текста закрепа (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-pin-text"></span>
+                            <input type="text" id="adm-pin-text-color" placeholder="#1c1c1c" maxlength="7">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adm-pin-opacity">Непрозрачность закрепа (%):</label>
+                        <input type="range" id="adm-pin-opacity" min="10" max="100">
+                        <span class="hint" id="val-pin-opacity">100%</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="adm-pin-font-size">Размер шрифта закрепа (px):</label>
+                        <input type="number" id="adm-pin-font-size" min="10" max="24">
+                    </div>
+                </div>
+                <span class="hint" style="margin-top: 10px;">Управление закрепом прямо из чата: <b>!закреп [текст]</b> и <b>!открепить</b> (Доступно стримеру и модераторам).</span>
             </div>
 
             <div class="admin-section">
@@ -66,12 +110,35 @@
                     <input type="range" id="adm-padding" min="2" max="20" step="1">
                     <span class="hint" id="val-padding">6px</span>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adm-incoming-margin">Отступ входящих слева (px):</label>
+                        <input type="range" id="adm-incoming-margin" min="0" max="300" step="5">
+                        <span class="hint" id="val-incoming-margin">0px</span>
+                    </div>
+                    <div class="form-group" id="group-outgoing-margin">
+                        <label for="adm-outgoing-margin">Отступ исходящих справа (px):</label>
+                        <input type="range" id="adm-outgoing-margin" min="0" max="300" step="5">
+                        <span class="hint" id="val-outgoing-margin">0px</span>
+                    </div>
+                </div>
             </div>
 
             <div class="admin-section">
                 <div class="section-header-row">
                     <h4>Шрифты и Визуал</h4>
                     <span class="section-reset-link" onclick="resetSection('visual')">Сбросить раздел</span>
+                </div>
+                <div class="form-group">
+                    <label>Шрифт чата:</label>
+                    <div class="toggle-group" id="adm-font-family" style="flex-wrap: wrap;">
+                        <button class="toggle-btn" data-value="system" onclick="setToggle('adm-font-family', 'system')">Системный</button>
+                        <button class="toggle-btn" data-value="inter" onclick="setToggle('adm-font-family', 'inter')">Inter</button>
+                        <button class="toggle-btn" data-value="roboto" onclick="setToggle('adm-font-family', 'roboto')">Roboto</button>
+                        <button class="toggle-btn" data-value="montserrat" onclick="setToggle('adm-font-family', 'montserrat')">Montserrat</button>
+                        <button class="toggle-btn" data-value="nunito" onclick="setToggle('adm-font-family', 'nunito')">Nunito</button>
+                        <button class="toggle-btn" data-value="play" onclick="setToggle('adm-font-family', 'play')">Play</button>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -95,17 +162,66 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="adm-bubble-color">Цвет фона бабла:</label>
-                        <input type="color" id="adm-bubble-color">
+                        <label>Цвет фона бабла (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-bubble"></span>
+                            <input type="text" id="adm-bubble-color" placeholder="#182533" maxlength="7">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="adm-text-color">Цвет текста сообщений:</label>
-                        <input type="color" id="adm-text-color">
+                        <label>Цвет текста (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-text"></span>
+                            <input type="text" id="adm-text-color" placeholder="#f5f5f5" maxlength="7">
+                        </div>
                     </div>
                 </div>
-                <div class="form-inline">
+                <div class="theme-presets">
+                    <span class="preset-title">Готовые палитры:</span>
+                    <div class="preset-list">
+                        <div class="preset-item" onclick="applyPreset('#182533', '#f5f5f5')" style="background: #182533; border: 1px solid #3b4e66;" title="Telegram Dark"></div>
+                        <div class="preset-item" onclick="applyPreset('#eef2f6', '#1c1c1c')" style="background: #eef2f6; border: 1px solid #d2dbe3;" title="Telegram Light"></div>
+                        <div class="preset-item" onclick="applyPreset('#2b5278', '#f5f5f5')" style="background: #2b5278; border: 1px solid #3b4e66;" title="Telegram Classic Green"></div>
+                        <div class="preset-item" onclick="applyPreset('#2d2522', '#f5ebd6')" style="background: #2d2522; border: 1px solid #4a3e39;" title="Cozy Peach"></div>
+                        <div class="preset-item" onclick="applyPreset('#e2f3eb', '#1c2d24')" style="background: #e2f3eb; border: 1px solid #c2d4cb;" title="Retro Mint"></div>
+                    </div>
+                </div>
+                <div class="form-inline" style="margin-top: 15px;">
                     <input type="checkbox" id="adm-avatars">
                     <label for="adm-avatars">Отображать аватарки пользователей</label>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-header-row">
+                    <h4>Сообщения стримера</h4>
+                    <span class="section-reset-link" onclick="resetSection('streamer-msg')">Сбросить раздел</span>
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-outgoing-enabled" onchange="toggleOutgoingSection()">
+                    <label for="adm-outgoing-enabled">Сообщения стримера как исходящие</label>
+                </div>
+                <div id="outgoing-sub-options" style="margin-top: 15px; display: none;">
+                    <div class="form-inline" style="margin-bottom: 15px;">
+                        <input type="checkbox" id="adm-outgoing-sync" onchange="toggleOutgoingColors()">
+                        <label for="adm-outgoing-sync">Синхронизировать цвет исходящих с темой</label>
+                    </div>
+                    <div id="outgoing-color-row" class="form-row">
+                        <div class="form-group">
+                            <label>Цвет фона исходящих (HEX):</label>
+                            <div class="color-input-wrap">
+                                <span class="color-swatch" id="swatch-outgoing-bubble"></span>
+                                <input type="text" id="adm-outgoing-bubble-color" placeholder="#2b5278" maxlength="7">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Цвет текста исходящих (HEX):</label>
+                            <div class="color-input-wrap">
+                                <span class="color-swatch" id="swatch-outgoing-text"></span>
+                                <input type="text" id="adm-outgoing-text-color" placeholder="#f5f5f5" maxlength="7">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -132,9 +248,21 @@
                 <button id="main-reset-btn" type="button" onclick="resetAllConfig()">Сбросить всё</button>
                 <button id="main-save-btn" onclick="adminSave()">Сохранить изменения</button>
             </div>
+            <div class="creator-tag">Made by RYDVE</div>
         </div>
     </div>
 
-    <script src="app.js?v=05e45f2e8fc4b23b24cc303883f2365fde413b3c" defer></script>
+    <div id="confirm-modal">
+        <div class="confirm-backdrop" id="confirm-backdrop"></div>
+        <div class="confirm-box">
+            <p id="confirm-msg-text" class="confirm-msg"></p>
+            <div class="confirm-actions">
+                <button class="confirm-btn-cancel" id="confirm-btn-cancel">Отмена</button>
+                <button class="confirm-btn-ok" id="confirm-btn-ok">Подтвердить</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=414bad8f722e4694e0840d775d4bb8360219a1f6" defer></script>
 </body>
 </html>
