@@ -16,7 +16,7 @@ const DEFAULT_CONFIG = {
     useLinkSpoiler: true,
     bubbleColor: '#182533',
     textColor: '#f5f5f5',
-    theme: 'dark'
+    theme: 'light'
 };
 
 let config = { ...DEFAULT_CONFIG };
