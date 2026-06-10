@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitchegram chat</title>
+    <script src="https://github.com/tmijs/tmi.js/releases/download/v1.5.0/tmi.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=05e45f2e8fc4b23b24cc303883f2365fde413b3c">
+</head>
+<body>
+
+    <div id="chat-view">
+        <svg id="gear-toggle-btn" onclick="openAdminPanel()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <div id="pin-banner"></div>
+        <div id="chat-container"></div>
+    </div>
+
+    <div id="config-view">
+        <div class="admin-panel">
+            <div class="admin-close-btn" onclick="closeAdminPanel()">Закрыть ✕</div>
+            <h2>Настройки Twitchegram чата</h2>
+            <span class="version-tag">Версия v7.4 Gear Edition</span>
+            
+            <div class="admin-section">
+                <h4>Основные настройки</h4>
+                <div class="form-group">
+                    <label for="adm-channel">Имя вашего Twitch-канала:</label>
+                    <input type="text" id="adm-channel" placeholder="например: kisyalev">
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-proxy">
+                    <label for="adm-proxy">Обход блокировки 7TV (Прокси РФ)</label>
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-spoiler">
+                    <label for="adm-spoiler">Скрывать ссылки под спойлер</label>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h4>Система Закрепов (Pinned Messages)</h4>
+                <div class="form-group">
+                    <label for="adm-pin-type">Стиль отображения закрепа:</label>
+                    <select id="adm-pin-type">
+                        <option value="tg">Стиль Telegram (С указанием автора)</option>
+                        <option value="text">Простой текст (Простой чистый баннер)</option>
+                    </select>
+                </div>
+                <span class="hint">Управление закрепом прямо из чата: <b>!закреп [текст]</b> и <b>!открепить</b> (Доступно стримеру и модераторам).</span>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-header-row">
+                    <h4>Геометрия и Размеры бабла</h4>
+                    <span class="section-reset-link" onclick="resetSection('geometry')">Сбросить раздел</span>
+                </div>
+                <div class="form-group">
+                    <label for="adm-max-width">Максимальная ширина сообщения (px):</label>
+                    <input type="range" id="adm-max-width" min="200" max="600" step="10">
+                    <span class="hint" id="val-max-width">400px</span>
+                </div>
+                <div class="form-group">
+                    <label for="adm-padding">Компактность бабла (внутренний отступ px):</label>
+                    <input type="range" id="adm-padding" min="2" max="20" step="1">
+                    <span class="hint" id="val-padding">6px</span>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-header-row">
+                    <h4>Шрифты и Визуал</h4>
+                    <span class="section-reset-link" onclick="resetSection('visual')">Сбросить раздел</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adm-font-size">Размер текста (px):</label>
+                        <input type="number" id="adm-font-size" min="12" max="28">
+                    </div>
+                    <div class="form-group">
+                        <label for="adm-time-size">Размер времени (px):</label>
+                        <input type="number" id="adm-time-size" min="8" max="18">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="adm-opacity">Непрозрачность баблов (%):</label>
+                    <input type="range" id="adm-opacity" min="10" max="100">
+                    <span class="hint" id="val-opacity">100%</span>
+                </div>
+                <div class="form-group">
+                    <label for="adm-lifetime">Время жизни сообщения:</label>
+                    <input type="range" id="adm-lifetime" min="0" max="120" step="5">
+                    <span class="hint" id="val-lifetime">Отключено</span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adm-bubble-color">Цвет фона бабла:</label>
+                        <input type="color" id="adm-bubble-color">
+                    </div>
+                    <div class="form-group">
+                        <label for="adm-text-color">Цвет текста сообщений:</label>
+                        <input type="color" id="adm-text-color">
+                    </div>
+                </div>
+                <div class="form-inline">
+                    <input type="checkbox" id="adm-avatars">
+                    <label for="adm-avatars">Отображать аватарки пользователей</label>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <div class="section-header-row">
+                    <h4>Кастомизация текста ролей/тегов</h4>
+                    <span class="section-reset-link" onclick="resetSection('roles')">Сбросить раздел</span>
+                </div>
+                <div class="form-group">
+                    <label for="adm-role-broadcaster">Текст для стримера:</label>
+                    <input type="text" id="adm-role-broadcaster">
+                </div>
+                <div class="form-group">
+                    <label for="adm-role-moderator">Текст для модераторов:</label>
+                    <input type="text" id="adm-role-moderator">
+                </div>
+                <div class="form-group">
+                    <label for="adm-role-vip">Текст для VIP-пользователей:</label>
+                    <input type="text" id="adm-role-vip">
+                </div>
+            </div>
+
+            <div class="admin-buttons-row">
+                <button id="main-reset-btn" type="button" onclick="resetAllConfig()">Сбросить всё</button>
+                <button id="main-save-btn" onclick="adminSave()">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=05e45f2e8fc4b23b24cc303883f2365fde413b3c" defer></script>
+</body>
+</html>
