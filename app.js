@@ -35,14 +35,14 @@ function proxyUrl(url) {
     if (!config.use7tvProxy) return url;
     if (!url) return url;
     
-    // Проксирование запросов к API 7TV
-    if (url.includes('7tv.io') && (url.includes('/emote-sets/') || url.includes('/users/'))) {
+    // Проксирование запросов к API 7TV, Decapi и IVR
+    if ((url.includes('7tv.io') && (url.includes('/emote-sets/') || url.includes('/users/'))) || url.includes('decapi.me') || url.includes('ivr.fi')) {
         return 'https://corsproxy.io/?' + encodeURIComponent(url);
     }
-    // Проксирование картинок 7TV через зеркало-оптимизатор
+    // Проксирование картинок 7TV через зеркало-оптимизатор wsrv.nl (вместо заблокированного в РФ images.weserv.nl)
     if (url.includes('7tv.app') || url.includes('7tv.io')) {
         const clean = url.replace(/^https?:\/\//, '');
-        return 'https://images.weserv.nl/?url=' + encodeURIComponent(clean);
+        return 'https://wsrv.nl/?url=' + encodeURIComponent(clean);
     }
     return url;
 }
@@ -216,6 +216,37 @@ function updatePinDisplay() {
 }
 
 async function loadThirdPartyEmotes(channelName) {
+    const cleanChannel = channelName.replace('#', '').trim();
+    let twitchId = '';
+    
+    // Попытка 1: Получить Twitch ID через DecAPI (проксированный)
+    try {
+        const idResp = await fetch(proxyUrl(`https://decapi.me/twitch/id/${cleanChannel}`));
+        if (idResp.ok) {
+            const txt = (await idResp.text()).trim();
+            if (txt && !txt.includes("User not found") && !txt.includes("error")) {
+                twitchId = txt;
+            }
+        }
+    } catch (e) {
+        console.error("Decapi ID error:", e);
+    }
+    
+    // Попытка 2 (резервная): Получить Twitch ID через API ivr.fi
+    if (!twitchId) {
+        try {
+            const ivrResp = await fetch(proxyUrl(`https://api.ivr.fi/v2/twitch/user?login=${cleanChannel}`));
+            if (ivrResp.ok) {
+                const arr = await ivrResp.json();
+                if (arr && arr[0] && arr[0].id) {
+                    twitchId = arr[0].id;
+                }
+            }
+        } catch (e) {
+            console.error("IVR ID error:", e);
+        }
+    }
+
     try {
         const res = await fetch('https://api.betterttv.net/3/cached/emotes/global');
         if (res.ok) { (await res.json()).forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
@@ -224,25 +255,22 @@ async function loadThirdPartyEmotes(channelName) {
         const res = await fetch(proxyUrl('https://7tv.io/v3/emote-sets/global'));
         if (res.ok) { const data = await res.json(); if (data.emotes) { data.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); } }
     } catch (e) {}
-    try {
-        const idResp = await fetch(`https://decapi.me/twitch/id/${channelName}`);
-        const twitchId = (await idResp.text()).trim();
-        if (twitchId && !twitchId.includes("User not found")) {
-            try {
-                const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`);
-                if (res.ok) { const data = await res.json(); const emotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])]; emotes.forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
-            } catch (e) {}
-            try {
-                const res = await fetch(proxyUrl(`https://7tv.io/v3/users/twitch/${twitchId}`));
-                if (res.ok) { 
-                    const data = await res.json(); 
-                    if (data.emote_set && data.emote_set.emotes) { 
-                        data.emote_set.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); 
-                    } 
-                }
-            } catch (e) {}
-        }
-    } catch (e) {}
+    
+    if (twitchId) {
+        try {
+            const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`);
+            if (res.ok) { const data = await res.json(); const emotes = [...(data.channelEmotes || []), ...(data.sharedEmotes || [])]; emotes.forEach(e => { customEmoteMap[e.code] = `https://cdn.betterttv.net/emote/${e.id}/1x.webp`; }); }
+        } catch (e) {}
+        try {
+            const res = await fetch(proxyUrl(`https://7tv.io/v3/users/twitch/${twitchId}`));
+            if (res.ok) { 
+                const data = await res.json(); 
+                if (data.emote_set && data.emote_set.emotes) { 
+                    data.emote_set.emotes.forEach(e => { if (e.data && e.data.host) customEmoteMap[e.name] = `https:${e.data.host.url}/1x.webp`; }); 
+                } 
+            }
+        } catch (e) {}
+    }
 }
 
 // ИНИЦИАЛИЗАЦИЯ КЛИЕНТА TWITCH
@@ -420,13 +448,36 @@ client.on('message', async (channel, tags, message, self) => {
             if (avatarCache[loginName] !== 'default') { avatarDiv.innerHTML = `<img src="${avatarCache[loginName]}">`; }
         } else {
             try {
-                const response = await fetch(`https://decapi.me/twitch/avatar/${loginName}`);
-                if (response.ok) {
-                    const avatarUrl = await response.text();
-                    if (avatarUrl && !avatarUrl.includes('User not found') && !avatarUrl.includes('error')) {
-                        avatarCache[loginName] = avatarUrl;
-                        avatarDiv.innerHTML = `<img src="${avatarUrl}">`;
-                    } else { avatarCache[loginName] = 'default'; }
+                let avatarUrl = '';
+                // Попытка 1: Загрузить аватар через DecAPI (проксированный)
+                try {
+                    const response = await fetch(proxyUrl(`https://decapi.me/twitch/avatar/${loginName}`));
+                    if (response.ok) {
+                        const txt = await response.text();
+                        if (txt && !txt.includes('User not found') && !txt.includes('error')) {
+                            avatarUrl = txt.trim();
+                        }
+                    }
+                } catch (decErr) {}
+
+                // Попытка 2 (резервная): Загрузить аватар через API ivr.fi (проксированный)
+                if (!avatarUrl) {
+                    try {
+                        const ivrResponse = await fetch(proxyUrl(`https://api.ivr.fi/v2/twitch/user?login=${loginName}`));
+                        if (ivrResponse.ok) {
+                            const arr = await ivrResponse.json();
+                            if (arr && arr[0] && arr[0].logo) {
+                                avatarUrl = arr[0].logo;
+                            }
+                        }
+                    } catch (ivrErr) {}
+                }
+
+                if (avatarUrl) {
+                    avatarCache[loginName] = avatarUrl;
+                    avatarDiv.innerHTML = `<img src="${avatarUrl}">`;
+                } else {
+                    avatarCache[loginName] = 'default';
                 }
             } catch (e) { avatarCache[loginName] = 'default'; }
         }
