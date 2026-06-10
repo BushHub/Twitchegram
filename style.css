@@ -9,7 +9,7 @@
     --bubble-color: rgba(24, 37, 51, 1.0);
     --text-color: #f5f5f5;
     
-    /* Палитра интерфейса настроек и закрепов (По умолчанию Тёмная тема) */
+    /* Палитра интерфейса настроек (По умолчанию Тёмная тема) */
     --bg-admin-view: #17212b;
     --bg-admin-panel: #24303f;
     --bg-admin-section: #1c2735;
@@ -19,9 +19,6 @@
     --text-admin-label: #b1c3d5;
     --input-bg: #24303f;
     --input-border: #3b4e66;
-    --pin-bg: #17212b;
-    --pin-border: #242f3d;
-    --pin-text: #f5f5f5;
 }
 
 /* Переопределения палитры для Светлой темы */
@@ -35,16 +32,13 @@ html[data-theme="light"] {
     --text-admin-label: #4f5b66;
     --input-bg: #ffffff;
     --input-border: #d2dbe3;
-    --pin-bg: #ffffff;
-    --pin-border: #e4e8ec;
-    --pin-text: #1c1c1c;
 }
 
 body {
     background: transparent;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--chat-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
     overflow: hidden;
     height: 100vh;
     width: 100vw;
@@ -92,8 +86,9 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background: var(--pin-bg);
-    border-bottom: 1px solid var(--pin-border);
+    background: var(--pin-bg-color, #ffffff);
+    border-bottom: 1px solid var(--pin-border-color, rgba(0,0,0,0.1));
+    color: var(--pin-text-color, #1c1c1c);
     padding: 10px 20px;
     z-index: 900;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -106,8 +101,8 @@ body {
     opacity: 1;
 }
 .pin-tg-style { border-left: 3px solid #5288c1; padding-left: 10px; }
-.pin-title { font-size: 11px; font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
-.pin-text { color: var(--pin-text); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-title { font-size: calc(var(--pin-font-size, 13px) - 2px); font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
+.pin-text { color: inherit; font-size: var(--pin-font-size, 13px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* КОНТЕЙНЕР ДЛЯ ЛЕНТЫ ЧАТА */
 #chat-container {
@@ -125,6 +120,7 @@ body {
     opacity: 0;
     transform: translateY(15px);
     overflow: visible;
+    margin-left: var(--incoming-margin, 0px);
 }
 @keyframes tg-appear { to { opacity: 1; transform: translateY(0); } }
 
@@ -439,6 +435,7 @@ body {
 /* ПЕРЕКЛЮЧАТЕЛЬ ТЕМА/РЕЖИМ (заменяет <select> для совместимости с OBS) */
 .toggle-group {
     display: flex;
+    flex-wrap: wrap;
     background: var(--bg-admin-view);
     border-radius: 8px;
     padding: 3px;
@@ -568,3 +565,30 @@ body {
 }
 .confirm-btn-cancel:hover { background: var(--border-admin); }
 .confirm-btn-ok:hover { background: #c85b60; }
+
+/* ИСХОДЯЩИЕ СООБЩЕНИЯ СТРИМЕРА (TELEGRAM-STYLE OUTGOING) */
+.message-row.outgoing {
+    justify-content: flex-end;
+    margin-right: var(--outgoing-margin, 0px);
+    margin-left: 0 !important;
+}
+.message-row.outgoing .tg-avatar {
+    display: none !important;
+}
+.message-row.outgoing .tg-bubble {
+    border-radius: 14px 14px 3px 14px;
+    background-color: var(--outgoing-bubble-color, #2b5278);
+}
+.message-row.outgoing .user-text {
+    color: var(--outgoing-text-color, #f5f5f5);
+}
+.message-row.outgoing .msg-time {
+    color: var(--outgoing-time-color, rgba(255, 255, 255, 0.6));
+}
+.message-row.outgoing .bubble-header {
+    display: none !important;
+}
+.message-row.outgoing .tg-reply-wrapper {
+    background: rgba(255, 255, 255, 0.08);
+}
+
