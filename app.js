@@ -15,7 +15,8 @@ const DEFAULT_CONFIG = {
     messageLifetime: 0, // 0 = не скрывать
     useLinkSpoiler: true,
     bubbleColor: '#182533',
-    textColor: '#f5f5f5'
+    textColor: '#f5f5f5',
+    theme: 'dark'
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -29,6 +30,8 @@ if (localStorage.getItem('tg_twitch_config_v7')) {
         config = { ...config, ...loaded };
     } catch (e) {}
 }
+
+document.documentElement.setAttribute('data-theme', config.theme || 'dark');
 
 // Функция проксирования 7TV ресурсов для обхода блокировок в РФ
 function proxyUrl(url) {
@@ -68,7 +71,17 @@ function openAdminPanel() {
 
 function closeAdminPanel() {
     document.getElementById('config-view').style.display = 'none';
+    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
 }
+
+window.toggleThemeSelector = function(themeValue) {
+    document.documentElement.setAttribute('data-theme', themeValue);
+};
+
+window.applyPreset = function(bubbleColor, textColor) {
+    document.getElementById('adm-bubble-color').value = bubbleColor;
+    document.getElementById('adm-text-color').value = textColor;
+};
 
 function setupAdminFields() {
     document.getElementById('adm-channel').value = config.channel;
@@ -91,6 +104,9 @@ function setupAdminFields() {
     document.getElementById('adm-spoiler').checked = config.useLinkSpoiler;
     document.getElementById('adm-bubble-color').value = config.bubbleColor || '#182533';
     document.getElementById('adm-text-color').value = config.textColor || '#f5f5f5';
+    
+    // Phase 5 fields
+    document.getElementById('adm-theme').value = config.theme || 'dark';
 
     document.getElementById('adm-max-width').oninput = function() { document.getElementById('val-max-width').innerText = this.value + 'px'; }
     document.getElementById('adm-padding').oninput = function() { document.getElementById('val-padding').innerText = this.value + 'px'; }
@@ -103,6 +119,8 @@ function setupAdminFields() {
     document.getElementById('adm-padding').oninput();
     document.getElementById('adm-opacity').oninput();
     document.getElementById('adm-lifetime').oninput();
+    
+    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
 }
 
 function adminSave() {
@@ -126,6 +144,9 @@ function adminSave() {
     config.useLinkSpoiler = document.getElementById('adm-spoiler').checked;
     config.bubbleColor = document.getElementById('adm-bubble-color').value;
     config.textColor = document.getElementById('adm-text-color').value;
+    
+    // Phase 5 fields
+    config.theme = document.getElementById('adm-theme').value;
 
     localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
     applyConfigStyles();
@@ -149,6 +170,7 @@ function resetSection(section) {
         config.bubbleColor = DEFAULT_CONFIG.bubbleColor;
         config.textColor = DEFAULT_CONFIG.textColor;
         config.showAvatars = DEFAULT_CONFIG.showAvatars;
+        config.theme = DEFAULT_CONFIG.theme;
     } else if (section === 'roles') {
         config.txtStreamer = DEFAULT_CONFIG.txtStreamer;
         config.txtMod = DEFAULT_CONFIG.txtMod;
@@ -179,6 +201,7 @@ function hexToRgb(hex) {
 }
 
 function applyConfigStyles() {
+    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
     document.documentElement.style.setProperty('--chat-font-size', config.fontSize + 'px');
     document.documentElement.style.setProperty('--time-font-size', config.timeSize + 'px');
     document.documentElement.style.setProperty('--bubble-max-width', config.maxWidth + 'px');

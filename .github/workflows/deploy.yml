@@ -18,7 +18,7 @@ jobs:
 
       - name: Cache-Busting version update
         run: |
-          sed -i 's/?v=2/?v=${{ github.sha }}/g' index.html
+          sed -i 's/?v=3/?v=${{ github.sha }}/g' index.html
 
       - name: Deploy to GitHub Pages (dev branch)
         if: github.ref_name == 'dev'

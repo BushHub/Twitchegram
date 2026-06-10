@@ -8,6 +8,36 @@
     --avatar-display: flex;
     --bubble-color: rgba(24, 37, 51, 1.0);
     --text-color: #f5f5f5;
+    
+    /* Палитра интерфейса настроек и закрепов (По умолчанию Тёмная тема) */
+    --bg-admin-view: #17212b;
+    --bg-admin-panel: #24303f;
+    --bg-admin-section: #1c2735;
+    --border-admin: #2f3e50;
+    --text-admin-main: #ffffff;
+    --text-admin-sec: #7f91a4;
+    --text-admin-label: #b1c3d5;
+    --input-bg: #24303f;
+    --input-border: #3b4e66;
+    --pin-bg: #17212b;
+    --pin-border: #242f3d;
+    --pin-text: #f5f5f5;
+}
+
+/* Переопределения палитры для Светлой темы */
+html[data-theme="light"] {
+    --bg-admin-view: #f4f6fa;
+    --bg-admin-panel: #ffffff;
+    --bg-admin-section: #f7f9fa;
+    --border-admin: #dfe3e6;
+    --text-admin-main: #1c1c1c;
+    --text-admin-sec: #707579;
+    --text-admin-label: #4f5b66;
+    --input-bg: #ffffff;
+    --input-border: #d2dbe3;
+    --pin-bg: #ffffff;
+    --pin-border: #e4e8ec;
+    --pin-text: #1c1c1c;
 }
 
 body {
@@ -62,8 +92,8 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    background: #17212b;
-    border-bottom: 1px solid #242f3d;
+    background: var(--pin-bg);
+    border-bottom: 1px solid var(--pin-border);
     padding: 10px 20px;
     z-index: 900;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -77,7 +107,7 @@ body {
 }
 .pin-tg-style { border-left: 3px solid #5288c1; padding-left: 10px; }
 .pin-title { font-size: 11px; font-weight: bold; color: #5288c1; text-transform: uppercase; margin-bottom: 2px; }
-.pin-text { color: #f5f5f5; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pin-text { color: var(--pin-text); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* КОНТЕЙНЕР ДЛЯ ЛЕНТЫ ЧАТА */
 #chat-container {
@@ -234,8 +264,8 @@ body {
     left: 0; 
     width: 100vw; 
     height: 100vh; 
-    background: #17212b; 
-    color: white; 
+    background: var(--bg-admin-view); 
+    color: var(--text-admin-main); 
     padding: 30px; 
     box-sizing: border-box; 
     overflow-y: auto; 
@@ -244,11 +274,11 @@ body {
 .admin-panel { 
     max-width: 600px; 
     margin: 0 auto; 
-    background: #24303f; 
+    background: var(--bg-admin-panel); 
     padding: 25px; 
     border-radius: 12px; 
     box-shadow: 0 8px 24px rgba(0,0,0,0.6); 
-    border: 1px solid #2f3e50; 
+    border: 1px solid var(--border-admin); 
     position: relative; 
 }
 .admin-panel h2 { margin-top: 0; margin-bottom: 4px; color: #5288c1; }
@@ -259,23 +289,23 @@ body {
     top: 20px; 
     right: 20px; 
     cursor: pointer; 
-    color: #7f91a4; 
+    color: var(--text-admin-sec); 
     font-size: 14px; 
     font-weight: bold; 
-    background: #1c2735; 
+    background: var(--bg-admin-section); 
     padding: 6px 12px; 
     border-radius: 6px; 
-    border: 1px solid #2f3e50; 
+    border: 1px solid var(--border-admin); 
 }
-.admin-close-btn:hover { color: white; background: #2f3e50; }
+.admin-close-btn:hover { color: var(--text-admin-main); background: var(--border-admin); }
 
-.version-tag { display: block; font-size: 11px; color: #7f91a4; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-.admin-section { margin-bottom: 20px; background: #1c2735; padding: 15px; border-radius: 8px; }
-.admin-section h4 { margin: 0 0 12px 0; color: #7f91a4; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
+.version-tag { display: block; font-size: 11px; color: var(--text-admin-sec); margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+.admin-section { margin-bottom: 20px; background: var(--bg-admin-section); padding: 15px; border-radius: 8px; }
+.admin-section h4 { margin: 0 0 12px 0; color: var(--text-admin-sec); text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; }
 .form-group { margin-bottom: 15px; }
-.form-group label { display: block; font-size: 13px; color: #b1c3d5; margin-bottom: 6px; }
+.form-group label { display: block; font-size: 13px; color: var(--text-admin-label); margin-bottom: 6px; }
 .form-group input[type="text"], .form-group input[type="number"], .form-group select {
-    width: 100%; background: #24303f; border: 1px solid #3b4e66; border-radius: 6px; color: white; padding: 8px 12px; box-sizing: border-box; font-size: 14px;
+    width: 100%; background: var(--input-bg); border: 1px solid var(--input-border); border-radius: 6px; color: var(--text-admin-main); padding: 8px 12px; box-sizing: border-box; font-size: 14px;
 }
 .form-group input[type="range"] { width: 100%; margin-top: 5px; }
 .form-inline { display: flex; align-items: center; gap: 10px; font-size: 14px; margin-top: 10px; }
@@ -336,6 +366,44 @@ body {
     color: white;
 }
 .hint { font-size: 11px; color: #6c7883; margin-top: 4px; display: block; }
+
+/* ЦВЕТОВЫЕ ПРЕСЕТЫ */
+.theme-presets {
+    margin-top: 12px;
+}
+.preset-title {
+    font-size: 12px;
+    color: var(--text-admin-label);
+    display: block;
+    margin-bottom: 8px;
+}
+.preset-list {
+    display: flex;
+    gap: 12px;
+}
+.preset-item {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.preset-item:hover {
+    transform: scale(1.2);
+}
+
+/* СТРОКА АВТОРСТВА */
+.creator-tag {
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-admin-sec);
+    margin-top: 20px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: bold;
+    opacity: 0.8;
+}
 
 /* АДАПТИВНОСТЬ ДЛЯ ВЕРТИКАЛЬНОГО РЕЖИМА И УЗКИХ ЭКРАНОВ (OBS INTERACT) */
 @media (max-width: 600px) {
