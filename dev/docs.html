@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitchegram — Документация</title>
+    <meta name="description" content="Инструкция по настройке виджета Twitchegram — красивого чата Twitch в стиле Telegram для OBS Studio.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #0e1621;
+            --bg-secondary: #17212b;
+            --bg-card: #1c2735;
+            --bg-code: #111a24;
+            --border: #2f3e50;
+            --text-primary: #f5f5f5;
+            --text-secondary: #7f91a4;
+            --text-label: #b1c3d5;
+            --accent: #5288c1;
+            --accent-hover: #6298d1;
+            --red: #e17076;
+            --green: #7bc862;
+            --purple: #a695e7;
+            --orange: #faa774;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── HEADER ─── */
+        .hero {
+            background: linear-gradient(135deg, #17212b 0%, #1c2735 50%, #1a2a3d 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 60px 20px 50px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 50%, rgba(82, 136, 193, 0.06) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 50%, rgba(166, 149, 231, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 52px;
+            margin-bottom: 16px;
+            display: block;
+        }
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .hero-badge {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(82, 136, 193, 0.12);
+            color: var(--accent);
+            border: 1px solid rgba(82, 136, 193, 0.25);
+        }
+
+        /* ─── LAYOUT ─── */
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        /* ─── SECTIONS ─── */
+        .section {
+            margin-bottom: 40px;
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title .icon { font-size: 22px; }
+
+        /* ─── CARDS ─── */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+        }
+        .card p {
+            color: var(--text-label);
+            font-size: 14px;
+        }
+        .card p + p { margin-top: 10px; }
+
+        /* ─── FEATURES GRID ─── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px 20px;
+            transition: border-color 0.2s ease, transform 0.15s ease;
+        }
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .feature-card .emoji {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .feature-card h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .feature-card p {
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ─── STEPS ─── */
+        .steps { counter-reset: step; }
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        .step-num {
+            counter-increment: step;
+            min-width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .step-num::after { content: counter(step); }
+        .step-body { flex: 1; }
+        .step-body p {
+            font-size: 14px;
+            color: var(--text-label);
+        }
+
+        /* ─── CODE/URL ─── */
+        code, .url-block {
+            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        }
+        code {
+            background: var(--bg-code);
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: var(--accent);
+            border: 1px solid var(--border);
+        }
+        .url-block {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin: 16px 0;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+            position: relative;
+        }
+        .url-block:hover { border-color: var(--accent); }
+        .url-block .url-text {
+            flex: 1;
+            font-size: 14px;
+            color: var(--accent);
+            word-break: break-all;
+            user-select: all;
+        }
+        .url-block .copy-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.15s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .url-block .copy-btn:hover { background: var(--accent-hover); }
+
+        /* ─── TABLE ─── */
+        .cmd-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 14px;
+        }
+        .cmd-table th {
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-code);
+        }
+        .cmd-table th:first-child { border-radius: 8px 0 0 0; }
+        .cmd-table th:last-child { border-radius: 0 8px 0 0; }
+        .cmd-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(47, 62, 80, 0.4);
+            color: var(--text-label);
+        }
+        .cmd-table tr:last-child td { border-bottom: none; }
+
+        /* ─── TIP BLOCK ─── */
+        .tip {
+            background: rgba(82, 136, 193, 0.08);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin: 16px 0;
+            font-size: 13px;
+            color: var(--text-label);
+            line-height: 1.6;
+        }
+        .tip .tip-icon { margin-right: 6px; }
+
+        .warning {
+            background: rgba(225, 112, 118, 0.08);
+            border-left: 3px solid var(--red);
+            border-radius: 0 8px 8px 0;
+            padding: 14px 18px;
+            margin: 16px 0;
+            font-size: 13px;
+            color: var(--text-label);
+            line-height: 1.6;
+        }
+
+        /* ─── SETTINGS LIST ─── */
+        .settings-list {
+            list-style: none;
+            padding: 0;
+        }
+        .settings-list li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--text-label);
+            border-bottom: 1px solid rgba(47, 62, 80, 0.3);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .settings-list li:last-child { border-bottom: none; }
+        .settings-list li .bullet {
+            color: var(--accent);
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 600px) {
+            .hero { padding: 40px 16px 36px; }
+            .hero h1 { font-size: 24px; }
+            .hero p { font-size: 14px; }
+            .container { padding: 28px 16px 60px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .step { gap: 12px; }
+            .url-block { flex-direction: column; align-items: stretch; gap: 10px; }
+            .url-block .copy-btn { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hero">
+        <div class="hero-content">
+            <span class="hero-icon">✈️</span>
+            <h1>Twitch<span>egram</span></h1>
+            <p>Красивый чат Twitch в стиле Telegram для ваших стримов в OBS Studio</p>
+            <span class="hero-badge">Документация v7.5.0</span>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- FEATURES -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">🔥</span> Основные возможности</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="emoji">📱</span>
+                    <h3>Дизайн Telegram</h3>
+                    <p>Закруглённые баблы, аватарки зрителей, время внутри бабла и поддержка ответов (цитирования).</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">🎨</span>
+                    <h3>Умные цвета</h3>
+                    <p>Каждому зрителю присваивается уникальный цвет из 20 оригинальных оттенков Telegram.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">🥳</span>
+                    <h3>Все смайлики</h3>
+                    <p>Twitch-эмоуты, а также сторонние смайлы 7TV и BetterTTV отображаются корректно.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">📌</span>
+                    <h3>Умный закреп</h3>
+                    <p>Закрепите любое важное сообщение вверху экрана с гибкой настройкой внешнего вида.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">✍️</span>
+                    <h3>Выбор шрифтов</h3>
+                    <p>Inter, Roboto, Montserrat, Nunito, Play — для идеального сочетания с вашим оверлеем.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">💬</span>
+                    <h3>Исходящие стримера</h3>
+                    <p>Ваши сообщения отображаются справа как исходящие в Telegram, без лишних плашек.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">🛠️</span>
+                    <h3>Настройка в OBS</h3>
+                    <p>Панель управления с тёмной/светлой темой, ползунками и цветовыми пресетами.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="emoji">🔗</span>
+                    <h3>Спойлеры ссылок</h3>
+                    <p>Ссылки скрываются под спойлер в стиле Telegram — защита зрителей от нежелательного контента.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUICK START -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">📺</span> Быстрый старт</h2>
+            <div class="card">
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>В OBS в панели <strong>«Источники»</strong> нажмите <code>+</code> и выберите <strong>«Браузер» (Browser)</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>Укажите название источника (например, <em>Чат Telegram</em>).</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>В поле <strong>URL</strong> вставьте ссылку на виджет:</p>
+                            <div class="url-block" onclick="copyUrl(this)">
+                                <span class="url-text">https://twitchegram.bushsquad.xyz/</span>
+                                <button class="copy-btn" type="button">Копировать</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>Установите размеры источника. Рекомендуемые параметры: <strong>Ширина: <code>450</code></strong>, <strong>Высота: <code>700</code></strong> (подстройте под свой макет).</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>Нажмите <strong>ОК</strong>. По умолчанию чат пустой и прозрачный, пока в него кто-то не напишет.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">⚙️</span> Тонкая настройка (Секретная шестерёнка)</h2>
+            <div class="card">
+                <p>Вы можете изменить любые параметры отображения чата прямо во время стрима:</p>
+                <div class="steps" style="margin-top: 18px;">
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>Нажмите правой кнопкой мыши по источнику чата в OBS и выберите <strong>«Взаимодействие» (Interact)</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>В открывшемся окне переведите курсор в <strong>верхний правый угол</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num"></div>
+                        <div class="step-body">
+                            <p>Плавно появится синяя <strong>иконка шестерёнки ⚙️</strong> — кликните по ней.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 16px;">
+                <p style="color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 12px;">Доступные настройки</p>
+                <ul class="settings-list">
+                    <li><span class="bullet">→</span> Подключение канала (имя вашего Twitch-канала)</li>
+                    <li><span class="bullet">→</span> Тема оформления панели настроек (светлая / тёмная)</li>
+                    <li><span class="bullet">→</span> Параметры баблов: максимальная ширина, компактность, непрозрачность и время жизни</li>
+                    <li><span class="bullet">→</span> Шрифты: выбор гарнитуры, размер текста и меток времени</li>
+                    <li><span class="bullet">→</span> Цветовые схемы: ручная настройка или готовые пресеты</li>
+                    <li><span class="bullet">→</span> Оформление закрепа: шрифт, непрозрачность, цвет фона и текста</li>
+                    <li><span class="bullet">→</span> Сообщения стримера: режим исходящих с авто-подбором или ручным цветом</li>
+                    <li><span class="bullet">→</span> Горизонтальные отступы: входящие (слева) и исходящие (справа)</li>
+                </ul>
+            </div>
+
+            <div class="tip">
+                <span class="tip-icon">🔐</span>
+                <strong>Конфиденциальность:</strong> Все настройки сохраняются локально в памяти вашего браузера (OBS). Если посторонний человек перейдёт по ссылке виджета, он не сможет повлиять на настройки вашего чата на стриме.
+            </div>
+        </section>
+
+        <!-- PIN COMMANDS -->
+        <section class="section">
+            <h2 class="section-title"><span class="icon">📌</span> Команды управления закрепом</h2>
+            <div class="card">
+                <p>Стример и модераторы канала могут управлять закреплённым сообщением прямо из чата Twitch:</p>
+                <table class="cmd-table">
+                    <thead>
+                        <tr>
+                            <th>Команда</th>
+                            <th>Альтернатива</th>
+                            <th>Описание</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>!закреп [текст]</code></td>
+                            <td><code>!pin [текст]</code></td>
+                            <td>Закрепляет сообщение вверху экрана с ником и указанным текстом</td>
+                        </tr>
+                        <tr>
+                            <td><code>!открепить</code></td>
+                            <td><code>!unpin</code></td>
+                            <td>Скрывает и удаляет закреплённое сообщение</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="tip" style="margin-bottom: 0;">
+                    <span class="tip-icon">💡</span>
+                    <strong>Пример:</strong> <code>!закреп Ребята, сегодня стрим до полуночи, не забывайте подписываться!</code>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        Made by RYDVE
+    </footer>
+
+    <script>
+        function copyUrl(block) {
+            const url = block.querySelector('.url-text').textContent;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = block.querySelector('.copy-btn');
+                const original = btn.textContent;
+                btn.textContent = '✓ Скопировано';
+                btn.style.background = '#7bc862';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '';
+                }, 1500);
+            });
+        }
+    </script>
+</body>
+</html>
