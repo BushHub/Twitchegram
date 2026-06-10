@@ -42,11 +42,11 @@
             <div class="admin-section">
                 <h4>Система Закрепов (Pinned Messages)</h4>
                 <div class="form-group">
-                    <label for="adm-pin-type">Стиль отображения закрепа:</label>
-                    <select id="adm-pin-type">
-                        <option value="tg">Стиль Telegram (С указанием автора)</option>
-                        <option value="text">Простой текст (Простой чистый баннер)</option>
-                    </select>
+                    <label>Стиль отображения закрепа:</label>
+                    <div class="toggle-group" id="adm-pin-type">
+                        <button class="toggle-btn" data-value="tg" onclick="setToggle('adm-pin-type', 'tg')">📎 С автором</button>
+                        <button class="toggle-btn" data-value="text" onclick="setToggle('adm-pin-type', 'text')">📄 Простой текст</button>
+                    </div>
                 </div>
                 <span class="hint">Управление закрепом прямо из чата: <b>!закреп [текст]</b> и <b>!открепить</b> (Доступно стримеру и модераторам).</span>
             </div>
@@ -74,11 +74,11 @@
                     <span class="section-reset-link" onclick="resetSection('visual')">Сбросить раздел</span>
                 </div>
                 <div class="form-group">
-                    <label for="adm-theme">Тема панели и закрепов:</label>
-                    <select id="adm-theme" onchange="toggleThemeSelector(this.value)">
-                        <option value="dark">Темная тема</option>
-                        <option value="light">Светлая тема</option>
-                    </select>
+                    <label>Тема панели и закрепов:</label>
+                    <div class="toggle-group" id="adm-theme">
+                        <button class="toggle-btn" data-value="light" onclick="setToggle('adm-theme', 'light')">☀️ Светлая</button>
+                        <button class="toggle-btn" data-value="dark" onclick="setToggle('adm-theme', 'dark')">🌙 Тёмная</button>
+                    </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -102,12 +102,18 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="adm-bubble-color">Цвет фона бабла:</label>
-                        <input type="color" id="adm-bubble-color">
+                        <label>Цвет фона бабла (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-bubble"></span>
+                            <input type="text" id="adm-bubble-color" placeholder="#182533" maxlength="7">
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="adm-text-color">Цвет текста сообщений:</label>
-                        <input type="color" id="adm-text-color">
+                        <label>Цвет текста (HEX):</label>
+                        <div class="color-input-wrap">
+                            <span class="color-swatch" id="swatch-text"></span>
+                            <input type="text" id="adm-text-color" placeholder="#f5f5f5" maxlength="7">
+                        </div>
                     </div>
                 </div>
                 <div class="theme-presets">
@@ -150,6 +156,17 @@
                 <button id="main-save-btn" onclick="adminSave()">Сохранить изменения</button>
             </div>
             <div class="creator-tag">Made by RYDVE</div>
+        </div>
+    </div>
+
+    <div id="confirm-modal">
+        <div class="confirm-backdrop" id="confirm-backdrop"></div>
+        <div class="confirm-box">
+            <p id="confirm-msg-text" class="confirm-msg"></p>
+            <div class="confirm-actions">
+                <button class="confirm-btn-cancel" id="confirm-btn-cancel">Отмена</button>
+                <button class="confirm-btn-ok" id="confirm-btn-ok">Подтвердить</button>
+            </div>
         </div>
     </div>
 

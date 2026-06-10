@@ -74,13 +74,72 @@ function closeAdminPanel() {
     document.documentElement.setAttribute('data-theme', config.theme || 'dark');
 }
 
-window.toggleThemeSelector = function(themeValue) {
-    document.documentElement.setAttribute('data-theme', themeValue);
+// Кастомный confirm (native confirm() заблокирован в OBS Browser Source)
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('confirm-modal');
+        document.getElementById('confirm-msg-text').textContent = message;
+        modal.classList.add('open');
+
+        const okBtn = document.getElementById('confirm-btn-ok');
+        const cancelBtn = document.getElementById('confirm-btn-cancel');
+        const backdrop = document.getElementById('confirm-backdrop');
+
+        function cleanup(result) {
+            modal.classList.remove('open');
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+            backdrop.removeEventListener('click', onCancel);
+            resolve(result);
+        }
+        function onOk() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        backdrop.addEventListener('click', onCancel);
+    });
+}
+
+// Toggle-группа (заменяет <select> для совместимости с OBS)
+window.setToggle = function(groupId, value) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    group.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === value);
+    });
+    if (groupId === 'adm-theme') {
+        document.documentElement.setAttribute('data-theme', value);
+    }
 };
+
+function getToggleValue(groupId) {
+    const group = document.getElementById(groupId);
+    if (!group) return null;
+    const active = group.querySelector('.toggle-btn.active');
+    return active ? active.dataset.value : null;
+}
+
+// Синхронизация свотча с hex-инпутом
+function syncColorSwatch(inputId, swatchId) {
+    const input = document.getElementById(inputId);
+    const swatch = document.getElementById(swatchId);
+    if (!input || !swatch) return;
+    const update = () => {
+        const val = input.value.trim();
+        if (/^#[0-9a-fA-F]{6}$/.test(val)) swatch.style.background = val;
+    };
+    if (input._swatchListener) input.removeEventListener('input', input._swatchListener);
+    input._swatchListener = update;
+    input.addEventListener('input', update);
+    update();
+}
 
 window.applyPreset = function(bubbleColor, textColor) {
     document.getElementById('adm-bubble-color').value = bubbleColor;
     document.getElementById('adm-text-color').value = textColor;
+    syncColorSwatch('adm-bubble-color', 'swatch-bubble');
+    syncColorSwatch('adm-text-color', 'swatch-text');
 };
 
 function setupAdminFields() {
@@ -94,7 +153,7 @@ function setupAdminFields() {
     document.getElementById('adm-role-broadcaster').value = config.txtStreamer;
     document.getElementById('adm-role-moderator').value = config.txtMod;
     document.getElementById('adm-role-vip').value = config.txtVip;
-    document.getElementById('adm-pin-type').value = config.pinType;
+    setToggle('adm-pin-type', config.pinType || 'tg');
     
     // Новые поля
     document.getElementById('adm-proxy').checked = config.use7tvProxy;
@@ -104,9 +163,11 @@ function setupAdminFields() {
     document.getElementById('adm-spoiler').checked = config.useLinkSpoiler;
     document.getElementById('adm-bubble-color').value = config.bubbleColor || '#182533';
     document.getElementById('adm-text-color').value = config.textColor || '#f5f5f5';
+    syncColorSwatch('adm-bubble-color', 'swatch-bubble');
+    syncColorSwatch('adm-text-color', 'swatch-text');
     
     // Phase 5 fields
-    document.getElementById('adm-theme').value = config.theme || 'dark';
+    setToggle('adm-theme', config.theme || 'light');
 
     document.getElementById('adm-max-width').oninput = function() { document.getElementById('val-max-width').innerText = this.value + 'px'; }
     document.getElementById('adm-padding').oninput = function() { document.getElementById('val-padding').innerText = this.value + 'px'; }
@@ -120,7 +181,7 @@ function setupAdminFields() {
     document.getElementById('adm-opacity').oninput();
     document.getElementById('adm-lifetime').oninput();
     
-    document.documentElement.setAttribute('data-theme', config.theme || 'dark');
+    document.documentElement.setAttribute('data-theme', config.theme || 'light');
 }
 
 function adminSave() {
@@ -134,7 +195,7 @@ function adminSave() {
     config.txtStreamer = document.getElementById('adm-role-broadcaster').value.trim() || 'Стример';
     config.txtMod = document.getElementById('adm-role-moderator').value.trim() || 'Модератор';
     config.txtVip = document.getElementById('adm-role-vip').value.trim() || 'VIP';
-    config.pinType = document.getElementById('adm-pin-type').value;
+    config.pinType = getToggleValue('adm-pin-type') || 'tg';
     
     // Новые поля
     config.use7tvProxy = document.getElementById('adm-proxy').checked;
@@ -146,7 +207,7 @@ function adminSave() {
     config.textColor = document.getElementById('adm-text-color').value;
     
     // Phase 5 fields
-    config.theme = document.getElementById('adm-theme').value;
+    config.theme = getToggleValue('adm-theme') || 'light';
 
     localStorage.setItem('tg_twitch_config_v7', JSON.stringify(config));
     applyConfigStyles();
@@ -154,10 +215,9 @@ function adminSave() {
     closeAdminPanel();
 }
 
-function resetSection(section) {
-    if (!confirm('Вы уверены, что хотите сбросить настройки этого раздела к значениям по умолчанию?')) {
-        return;
-    }
+async function resetSection(section) {
+    const confirmed = await showConfirm('Вы уверены, что хотите сбросить настройки этого раздела к значениям по умолчанию?');
+    if (!confirmed) return;
     
     if (section === 'geometry') {
         config.maxWidth = DEFAULT_CONFIG.maxWidth;
@@ -180,10 +240,9 @@ function resetSection(section) {
     setupAdminFields();
 }
 
-function resetAllConfig() {
-    if (!confirm('ВНИМАНИЕ! Вы уверены, что хотите сбросить ВСЕ настройки чата к первоначальным значениям по умолчанию?')) {
-        return;
-    }
+async function resetAllConfig() {
+    const confirmed = await showConfirm('ВНИМАНИЕ! Вы уверены, что хотите сбросить ВСЕ настройки чата к первоначальным значениям по умолчанию?');
+    if (!confirmed) return;
     
     config = { ...DEFAULT_CONFIG };
     setupAdminFields();

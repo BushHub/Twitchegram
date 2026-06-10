@@ -435,3 +435,136 @@ body {
         gap: 10px;
     }
 }
+
+/* ПЕРЕКЛЮЧАТЕЛЬ ТЕМА/РЕЖИМ (заменяет <select> для совместимости с OBS) */
+.toggle-group {
+    display: flex;
+    background: var(--bg-admin-view);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.toggle-btn {
+    flex: 1;
+    padding: 8px 10px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-admin-sec);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease;
+    font-family: inherit;
+}
+.toggle-btn.active {
+    background: #5288c1;
+    color: white;
+}
+.toggle-btn:hover:not(.active) {
+    background: var(--border-admin);
+    color: var(--text-admin-main);
+}
+
+/* HEX ЦВЕТ-ИНПУТ С СВОТЧЕМ (заменяет <input type="color">) */
+.color-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.color-swatch {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid var(--input-border);
+    flex-shrink: 0;
+    background: #182533;
+    transition: background 0.15s ease;
+}
+.color-input-wrap input[type="text"] {
+    width: 100%;
+    border: none !important;
+    background: transparent !important;
+    color: var(--text-admin-main) !important;
+    font-size: 14px;
+    outline: none;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+
+/* КАСТОМНЫЙ ДИАЛОГ ПОДТВЕРЖДЕНИЯ (заменяет confirm() для OBS) */
+#confirm-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    align-items: center;
+    justify-content: center;
+}
+#confirm-modal.open {
+    display: flex;
+}
+.confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+}
+.confirm-box {
+    position: relative;
+    background: var(--bg-admin-panel);
+    border: 1px solid var(--border-admin);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 300px;
+    width: 88%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+.confirm-msg {
+    color: var(--text-admin-main);
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 20px 0;
+}
+.confirm-actions {
+    display: flex;
+    gap: 10px;
+}
+.confirm-btn-cancel {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border-admin);
+    color: var(--text-admin-sec);
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+.confirm-btn-ok {
+    flex: 1;
+    background: #e17076;
+    border: none;
+    color: white;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: inherit;
+    transition: background 0.15s ease;
+}
+.confirm-btn-cancel:hover { background: var(--border-admin); }
+.confirm-btn-ok:hover { background: #c85b60; }
