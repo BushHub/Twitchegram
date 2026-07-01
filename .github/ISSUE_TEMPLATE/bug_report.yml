@@ -1,0 +1,72 @@
+name: 🐛 Баг-репорт (Bug Report)
+description: Сообщить об ошибке в работе виджета Twitchegram
+title: "[BUG]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 🧪 Спасибо, что помогаешь делать Twitchegram лучше!
+        Перед отправкой баг-репорта убедись, что проблема не связана со сбоем серверов Twitch или 7TV.
+  
+  - type: textarea
+    id: description
+    attributes:
+      label: Описание проблемы
+      description: Четко и кратко опиши, что именно идет не так.
+      placeholder: Например: Эмодзи от 7TV отображаются как пустые квадраты или текст...
+    validations:
+      required: true
+
+  - type: input
+    id: streamer-id
+    attributes:
+      label: ID / Имя канала (для теста)
+      placeholder: Например: bush_stream
+    validations:
+      required: false
+
+  - type: dropdown
+    id: obs-version
+    attributes:
+      label: Версия OBS Studio
+      description: Какую версию ОБС ты используешь?
+      options:
+        - "OBS Studio 31.x и новее"
+        - "OBS Studio 30.x"
+        - "OBS Studio 29.x"
+        - "Другая программа (Streamlabs / TikTok Live Studio)"
+        - "Проверяю просто в браузере (Chrome / Firefox)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: browser-source-settings
+    attributes:
+      label: Настройки Browser Source в OBS
+      description: Отметь галочками параметры, которые включены в свойствах источника-браузера:
+      options:
+        - label: "Включено аппаратное ускорение (Ускорение перехода браузера)"
+        - label: "Управлять аудио через OBS"
+        - label: "Обновлять страницу, когда сцена становится активной"
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги для воспроизведения бага
+      description: Напиши пошагово, как вызвать эту ошибку.
+      placeholder: |
+        1. Запустить OBS
+        2. Отправить в чат эмодзи 'FeelsGoodMan'
+        3. Посмотреть на экран...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи консоли (F12) или скриншоты
+      description: Если в OBS нажать ПКМ по источнику -> "Взаимодействовать" и нажать F12, там будут логи. Вставь их сюда или просто перетащи скриншот ошибки.
+      placeholder: Код ошибки или логи из консоли браузера...
+    validations:
+      required: false
