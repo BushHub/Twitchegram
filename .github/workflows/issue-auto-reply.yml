@@ -1,0 +1,28 @@
+name: Issue Auto Responder
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  auto-reply:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write # Даем права на написание комментариев
+
+    steps:
+      - name: Send a welcoming automatic reply
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Привет, @${{ github.event.issue.user.login }}! 👋
+            
+            Спасибо, что открыл тикет в репозитории **Twitchegram**. Наш робот зафиксировал твое обращение. 
+            
+            * 🐛 **Если это баг:** Мы изучим конфигурацию вашей OBS и предоставленные логи.
+            * 💡 **Если это предложение:** Идея будет рассмотрена на предмет совместимости с текущим дизайном Telegram-стиля.
+            
+            Как только у разработчиков сообщества **BUSH** появится свободное время, мы обязательно вернемся с ответом прямо в этой ветке. 
+            
+            *Это автоматическое сообщение.* Статус проекта можно отслеживать в нашей организации [BushHub](https://github.com/BushHub).
