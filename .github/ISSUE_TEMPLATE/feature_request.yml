@@ -1,0 +1,36 @@
+name: 💡 Предложение фичи (Feature Request)
+description: Предложить новую идею, стилизацию или функцию для Twitchegram
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### 🚀 Есть крутая идея? Поделись!
+        Мы всегда рады новым мыслям по кастомизации и улучшению виджета.
+  
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Какую проблему решит новая фича?
+      description: Опиши, чего тебе не хватает в текущей версии виджета.
+      placeholder: Например: Хотелось бы иметь возможность скрывать никнеймы определенных ботов (Nightbot и т.д.)...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution-concept
+    attributes:
+      label: Как это должно работать?
+      description: Твое видение реализации (новые параметры в конфиге, изменения в CSS и т.д.).
+      placeholder: Добавить в настройки массив заблокированных пользователей...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Существующие альтернативы
+      description: Рассматривал ли ты другие варианты решения этой задачи?
+    validations:
+      required: false
